@@ -1,4 +1,7 @@
+// Modificado: Se elimina el asunto por diputado y se agrega un solo cuadro de asunto
+
 let sesion_id = null;
+let asunto_id = null; // Nuevo: Para manejar el asunto seleccionado
 
 // Función para guardar la sesión
 async function guardarSesion() {
@@ -17,7 +20,6 @@ async function guardarSesion() {
         });
 
         const result = await response.json();
-        console.log('Sesión guardada:', result);
         alert(result.message);
         sesion_id = result.sesion_id;
         sessionStorage.setItem('sesion_id', sesion_id);
@@ -26,13 +28,40 @@ async function guardarSesion() {
     }
 }
 
+// Función para guardar un asunto
+async function guardarAsunto() {
+    const nombreAsunto = document.getElementById('nombreAsunto').value;
+
+    if (!sesion_id) {
+        alert('Debe iniciar una sesión antes de agregar un asunto.');
+        return;
+    }
+    if (!nombreAsunto) {
+        alert('Por favor, ingrese un asunto.');
+        return;
+    }
+
+    try {
+        const response = await fetch('https://prototipo-votacion.onrender.com/api/asunto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre: nombreAsunto, sesion_id: sesion_id })
+        });
+
+        const result = await response.json();
+        alert(result.message);
+        asunto_id = result.asunto_id;
+        sessionStorage.setItem('asunto_id', asunto_id);
+    } catch (error) {
+        console.error('Error al registrar el asunto:', error);
+    }
+}
+
 // Función para cargar los diputados
 async function cargarDiputados() {
     try {
         const response = await fetch('https://prototipo-votacion.onrender.com/api/diputados');
         const diputados = await response.json();
-        console.log('Diputados cargados:', diputados);
-
         const container = document.getElementById('diputados-container');
         container.innerHTML = '';
 
@@ -44,8 +73,6 @@ async function cargarDiputados() {
                     <h3>${diputado.nombre}</h3>
                     <p><strong>Distrito:</strong> ${diputado.distrito || ''}</p>
                     <p><strong>Bancada:</strong> ${diputado.bancada || ''}</p>
-                    <label>Asunto:</label>
-                    <input type="text" id="asunto-${diputado.id}" placeholder="Escribe el asunto">
                     <div>
                         <button onclick="registrarVoto(${diputado.id}, 'a favor')">A favor</button>
                         <button onclick="registrarVoto(${diputado.id}, 'en contra')">En contra</button>
@@ -62,11 +89,8 @@ async function cargarDiputados() {
 
 // Función para registrar un voto
 async function registrarVoto(diputadoId, voto) {
-    const asunto = document.getElementById(`asunto-${diputadoId}`).value;
-    const sesion_id = sessionStorage.getItem('sesion_id');
-
-    if (!sesion_id) {
-        alert('Por favor, inicie una sesión antes de votar.');
+    if (!sesion_id || !asunto_id) {
+        alert('Debe iniciar una sesión y seleccionar un asunto antes de votar.');
         return;
     }
 
@@ -74,44 +98,18 @@ async function registrarVoto(diputadoId, voto) {
         const response = await fetch('https://prototipo-votacion.onrender.com/api/voto', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ diputado_id: diputadoId, voto: voto, asunto: asunto, sesion_id: sesion_id })
+            body: JSON.stringify({ diputado_id: diputadoId, voto: voto, asunto_id: asunto_id, sesion_id: sesion_id })
         });
 
         const data = await response.json();
-        console.log('Voto registrado:', data);
         alert(data.message || 'Voto registrado correctamente.');
-        cargarResultados(); // Cargar resultados actualizados después del voto
+        cargarResultados();
     } catch (error) {
         console.error('Error al registrar voto:', error);
     }
 }
 
-// 📌 Función para cargar los resultados de la votación
-async function cargarResultados() {
-    try {
-        const response = await fetch('https://prototipo-votacion.onrender.com/api/resultados');
-        const resultados = await response.json();
-        console.log('Resultados cargados:', resultados);
-
-        const container = document.getElementById('resultados-container');
-        container.innerHTML = '';
-
-        resultados.forEach(resultado => {
-            container.innerHTML += `
-                <div class="resultado-card">
-                    <h3>${resultado.nombre}</h3>
-                    <p><strong>A favor:</strong> ${resultado.a_favor}</p>
-                    <p><strong>En contra:</strong> ${resultado.en_contra}</p>
-                    <p><strong>Abstenciones:</strong> ${resultado.abstenciones}</p>
-                    <p><strong>Ausente:</strong> ${resultado.ausente}</p>
-                </div>
-            `;
-        });
-    } catch (error) {
-        console.error('Error al cargar resultados:', error);
-    }
-}
-
+// Cargar diputados y resultados al iniciar la página
 window.onload = () => {
     cargarDiputados();
     cargarResultados();
