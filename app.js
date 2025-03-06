@@ -126,7 +126,7 @@ async function cargarResultados() {
         const resultados = await response.json();
         console.log('Resultados cargados:', resultados);
 
-        const container = document.getElementById('resultados-container');
+        const container = document.getElementById('resultados-content');
         container.innerHTML = '';
 
         resultados.forEach(resultado => {
