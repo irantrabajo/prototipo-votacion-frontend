@@ -1,0 +1,99 @@
+/* Estilos generales */
+body {
+    background-color: #800000; /* Color guinda */
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Contenedor de la sesión */
+#sesion-container {
+    background-color: #fff;
+    color: #800000;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    display: inline-block;
+    text-align: center;
+}
+
+#sesion-container input {
+    padding: 5px;
+    width: 250px;
+    margin: 5px;
+}
+
+/* Tarjetas de diputados */
+.diputado-card {
+    background-color: #fff;
+    color: #800000;
+    border-radius: 8px;
+    margin: 10px;
+    padding: 10px;
+    display: inline-block;
+    width: 250px;
+    vertical-align: top;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.diputado-card img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.diputado-card input[type="text"] {
+    width: 90%;
+    padding: 5px;
+    margin: 10px 0;
+}
+
+.diputado-card button {
+    padding: 5px 10px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    background-color: #800000;
+    color: #fff;
+    cursor: pointer;
+}
+
+.diputado-card button:hover {
+    background-color: #660000;
+}
+
+/* Sección de resultados */
+#resultados {
+    margin-top: 30px;
+    background-color: #fff;
+    color: #800000;
+    padding: 20px;
+    border-radius: 8px;
+    display: inline-block;
+    text-align: left;
+    max-width: 800px;
+    width: 100%;
+}
+
+#resultados h2 {
+    text-align: center;
+}
+
+#resultados button {
+    display: block;
+    margin: 10px auto;
+    padding: 10px 20px;
+    background-color: #800000;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#resultados button:hover {
+    background-color: #660000;
+}
