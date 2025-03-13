@@ -36,8 +36,7 @@ async function guardarAsunto() {
     const nombreAsunto = document.getElementById('nombreAsunto').value;
 
     if (!sesion_id) {
-        aler
-        t('Debe iniciar una sesión antes de agregar un asunto.');
+        alert('Debe iniciar una sesión antes de agregar un asunto.');
         return;
     }
     if (!nombreAsunto) {
@@ -61,14 +60,22 @@ async function guardarAsunto() {
     }
 }
 
+// Orden de bancadas
+const ordenBancadas = ["PRI", "PRD", "MC", "Representación Parlamentaria", "PAN", "Independientes", "PT", "PVEM", "Morena"];
+
 // Función para cargar los diputados
 async function cargarDiputados() {
     try {
         const response = await fetch(`${backendURL}/api/diputados`);
         if (!response.ok) throw new Error("No se pudo obtener la lista de diputados");
 
-        const diputados = await response.json();
+        let diputados = await response.json();
         console.log('Diputados cargados:', diputados);
+
+        // Ordenar diputados por bancada según la lista
+        diputados.sort((a, b) => {
+            return ordenBancadas.indexOf(a.bancada) - ordenBancadas.indexOf(b.bancada);
+        });
 
         const container = document.getElementById('diputados-container');
         container.innerHTML = '';
@@ -76,7 +83,7 @@ async function cargarDiputados() {
         diputados.forEach(diputado => {
             const foto = diputado.foto_url ? diputado.foto_url : 'placeholder.png';
             container.innerHTML += `
-                <div class="diputado-card">
+                <div class="diputado-card" id="diputado-${diputado.id}">
                     <img src="${foto}" alt="${diputado.nombre}">
                     <h3>${diputado.nombre}</h3>
                     <p><strong>Distrito:</strong> ${diputado.distrito || ''}</p>
@@ -95,7 +102,7 @@ async function cargarDiputados() {
     }
 }
 
-// Función para registrar un voto
+// Función para registrar un voto y ocultar diputado votado
 async function registrarVoto(diputadoId, voto) {
     if (!sesion_id || !asunto_id) {
         alert('Debe iniciar una sesión y seleccionar un asunto antes de votar.');
@@ -112,38 +119,29 @@ async function registrarVoto(diputadoId, voto) {
         const data = await response.json();
         console.log('Voto registrado:', data);
         alert(data.message || 'Voto registrado correctamente.');
+
+        // Ocultar el diputado votado
+        document.getElementById(`diputado-${diputadoId}`).style.display = 'none';
+
         cargarResultados(); // Cargar resultados actualizados después del voto
     } catch (error) {
         console.error('Error al registrar voto:', error);
     }
 }
 
-// Función para cargar los resultados de la votación
-async function cargarResultados() {
-    try {
-        const response = await fetch(`${backendURL}/api/resultados`);
-        if (!response.ok) throw new Error("No se pudieron obtener los resultados");
+// Función para descargar resultados en TXT
+function descargarResultadosTxt() {
+    alert("Función de descarga TXT aún no implementada.");
+}
 
-        const resultados = await response.json();
-        console.log('Resultados cargados:', resultados);
+// Función para descargar resultados en PDF
+function descargarResultadosPDF() {
+    alert("Función de descarga PDF aún no implementada.");
+}
 
-        const container = document.getElementById('resultados-content');
-        container.innerHTML = '';
-
-        resultados.forEach(resultado => {
-            container.innerHTML += `
-                <div class="resultado-card">
-                    <h3>${resultado.nombre}</h3>
-                    <p><strong>A favor:</strong> ${resultado.a_favor}</p>
-                    <p><strong>En contra:</strong> ${resultado.en_contra}</p>
-                    <p><strong>Abstenciones:</strong> ${resultado.abstenciones}</p>
-                    <p><strong>Ausente:</strong> ${resultado.ausente}</p>
-                </div>
-            `;
-        });
-    } catch (error) {
-        console.error('Error al cargar resultados:', error);
-    }
+// Función para descargar resultados en Excel
+function descargarResultadosExcel() {
+    alert("Función de descarga Excel aún no implementada.");
 }
 
 // Cargar diputados y resultados al iniciar la página
