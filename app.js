@@ -36,7 +36,8 @@ async function guardarAsunto() {
     const nombreAsunto = document.getElementById('nombreAsunto').value;
 
     if (!sesion_id) {
-        alert('Debe iniciar una sesión antes de agregar un asunto.');
+        aler
+        t('Debe iniciar una sesión antes de agregar un asunto.');
         return;
     }
     if (!nombreAsunto) {
