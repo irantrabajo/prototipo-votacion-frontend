@@ -7,7 +7,7 @@ const backendURL = "https://prototipo-votacion.onrender.com";
 
 // Función para guardar la sesión
 async function guardarSesion() {
-    const nombreSesion = document.getElementById('nombreSesion').value;
+    const nombreSesion = document.getElementById('nombreSesion')?.value;
 
     if (!nombreSesion) {
         alert('Por favor, ingrese el nombre de la sesión.');
@@ -33,7 +33,7 @@ async function guardarSesion() {
 
 // Función para guardar un asunto
 async function guardarAsunto() {
-    const nombreAsunto = document.getElementById('nombreAsunto').value;
+    const nombreAsunto = document.getElementById('nombreAsunto')?.value;
 
     if (!sesion_id) {
         alert('Debe iniciar una sesión antes de agregar un asunto.');
@@ -78,6 +78,11 @@ async function cargarDiputados() {
         });
 
         const container = document.getElementById('diputados-container');
+        if (!container) {
+            console.error("No se encontró el contenedor de diputados.");
+            return;
+        }
+
         container.innerHTML = '';
 
         diputados.forEach(diputado => {
@@ -121,7 +126,7 @@ async function registrarVoto(diputadoId, voto) {
         alert(data.message || 'Voto registrado correctamente.');
 
         // Ocultar el diputado votado
-        document.getElementById(`diputado-${diputadoId}`).style.display = 'none';
+        document.getElementById(`diputado-${diputadoId}`)?.remove();
 
         cargarResultados(); // Cargar resultados actualizados después del voto
     } catch (error) {
@@ -129,23 +134,45 @@ async function registrarVoto(diputadoId, voto) {
     }
 }
 
-// Función para descargar resultados en TXT
-function descargarResultadosTxt() {
-    alert("Función de descarga TXT aún no implementada.");
-}
+// Función para cargar los resultados
+async function cargarResultados() {
+    try {
+        const response = await fetch(`${backendURL}/api/resultados`);
+        if (!response.ok) throw new Error("No se pudieron obtener los resultados");
 
-// Función para descargar resultados en PDF
-function descargarResultadosPDF() {
-    alert("Función de descarga PDF aún no implementada.");
-}
+        const resultados = await response.json();
+        console.log('Resultados cargados:', resultados);
 
-// Función para descargar resultados en Excel
-function descargarResultadosExcel() {
-    alert("Función de descarga Excel aún no implementada.");
+        const container = document.getElementById('resultados-content');
+        if (!container) {
+            console.error("No se encontró el contenedor de resultados.");
+            return;
+        }
+
+        container.innerHTML = '';
+
+        resultados.forEach(resultado => {
+            container.innerHTML += `
+                <div class="resultado-card">
+                    <h3>${resultado.nombre}</h3>
+                    <p><strong>A favor:</strong> ${resultado.a_favor}</p>
+                    <p><strong>En contra:</strong> ${resultado.en_contra}</p>
+                    <p><strong>Abstenciones:</strong> ${resultado.abstenciones}</p>
+                    <p><strong>Ausente:</strong> ${resultado.ausente}</p>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Error al cargar resultados:', error);
+    }
 }
 
 // Cargar diputados y resultados al iniciar la página
 window.onload = () => {
     cargarDiputados();
-    cargarResultados();
+    if (typeof cargarResultados === "function") {
+        cargarResultados();
+    } else {
+        console.error("cargarResultados no está definido.");
+    }
 };

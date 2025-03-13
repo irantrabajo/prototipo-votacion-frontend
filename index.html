@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prototipo de Votación</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="styles.css"> 
-    <script defer src="app.js"></script> 
+
     <!-- Librerías para exportar PDF y Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Tu script debe cargarse después de que el DOM esté listo -->
+    <script defer src="app.js"></script> 
 </head>
 <body>
 
@@ -22,17 +25,28 @@
         <button onclick="guardarSesion()">Empezar Votación</button>
     </div>
 
+    <!-- Contenedor de los diputados -->
     <div id="diputados-container">
-        <!-- Aquí se cargarán los datos de los diputados -->
+        <!-- Aquí se cargarán los datos de los diputados dinámicamente -->
     </div>
 
+    <!-- Contenedor de resultados -->
     <div id="resultados">
         <h2>Resultados de la Votación</h2>
         <div id="resultados-content"></div>
-        <button onclick="descargarResultadosTxt()">Descargar TXT</button>
-        <button onclick="descargarResultadosPDF()">Descargar PDF</button>
-        <button onclick="descargarResultadosExcel()">Descargar Excel</button>
+
+        <!-- Botones de descarga -->
+        <button id="descargarTxt">Descargar TXT</button>
+        <button id="descargarPdf">Descargar PDF</button>
+        <button id="descargarExcel">Descargar Excel</button>
     </div>
+
+    <script>
+        // Se agregan eventos a los botones de descarga para evitar errores en la consola
+        document.getElementById("descargarTxt").addEventListener("click", descargarResultadosTxt);
+        document.getElementById("descargarPdf").addEventListener("click", descargarResultadosPDF);
+        document.getElementById("descargarExcel").addEventListener("click", descargarResultadosExcel);
+    </script>
 
 </body>
 </html>
