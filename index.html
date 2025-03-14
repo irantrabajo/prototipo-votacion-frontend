@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- Tu script debe cargarse después de que el DOM esté listo -->
+    <!-- Cargar el script después de que el DOM esté listo -->
     <script defer src="app.js"></script> 
 </head>
 <body>
@@ -23,6 +23,13 @@
         <label for="nombreSesion">Nombre de la sesión:</label>
         <input type="text" id="nombreSesion" placeholder="Ejemplo: Sesión Ordinaria 2025">
         <button onclick="guardarSesion()">Empezar Votación</button>
+    </div>
+
+    <!-- Contenedor para agregar un asunto (se oculta hasta que haya sesión) -->
+    <div id="asunto-container" style="display:none;">
+        <label for="nombreAsunto">Nombre del asunto:</label>
+        <input type="text" id="nombreAsunto" placeholder="Ejemplo: Reforma Energética">
+        <button onclick="guardarAsunto()">Guardar Asunto</button>
     </div>
 
     <!-- Contenedor de los diputados -->
@@ -41,12 +48,6 @@
         <button id="descargarExcel">Descargar Excel</button>
     </div>
 
-    <script>
-        // Se agregan eventos a los botones de descarga para evitar errores en la consola
-        document.getElementById("descargarTxt").addEventListener("click", descargarResultadosTxt);
-        document.getElementById("descargarPdf").addEventListener("click", descargarResultadosPDF);
-        document.getElementById("descargarExcel").addEventListener("click", descargarResultadosExcel);
-    </script>
-
 </body>
 </html>
+
