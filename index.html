@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- Cargar el script después de que el DOM esté listo -->
+    <!-- Tu script debe cargarse después de que el DOM esté listo -->
     <script defer src="app.js"></script> 
 </head>
 <body>
@@ -19,35 +19,45 @@
     <h1>Votación de Diputados</h1>
 
     <!-- Contenedor para iniciar la sesión -->
-    <div id="sesion-container">
+    <div id="sesion-container" class="card">
+        <h2>Iniciar Sesión</h2>
         <label for="nombreSesion">Nombre de la sesión:</label>
         <input type="text" id="nombreSesion" placeholder="Ejemplo: Sesión Ordinaria 2025">
         <button onclick="guardarSesion()">Empezar Votación</button>
     </div>
 
-    <!-- Contenedor para agregar un asunto (se oculta hasta que haya sesión) -->
-    <div id="asunto-container" style="display:none;">
-        <label for="nombreAsunto">Nombre del asunto:</label>
+    <!-- Contenedor para registrar un asunto -->
+    <div id="asunto-container" class="card">
+        <h2>Registrar Asunto</h2>
+        <label for="nombreAsunto">Nombre del Asunto:</label>
         <input type="text" id="nombreAsunto" placeholder="Ejemplo: Reforma Energética">
         <button onclick="guardarAsunto()">Guardar Asunto</button>
     </div>
 
     <!-- Contenedor de los diputados -->
-    <div id="diputados-container">
+    <div id="diputados-container" class="container">
         <!-- Aquí se cargarán los datos de los diputados dinámicamente -->
     </div>
 
     <!-- Contenedor de resultados -->
-    <div id="resultados">
+    <div id="resultados" class="card">
         <h2>Resultados de la Votación</h2>
         <div id="resultados-content"></div>
 
         <!-- Botones de descarga -->
-        <button id="descargarTxt">Descargar TXT</button>
-        <button id="descargarPdf">Descargar PDF</button>
-        <button id="descargarExcel">Descargar Excel</button>
+        <div class="botones">
+            <button id="descargarTxt">Descargar TXT</button>
+            <button id="descargarPdf">Descargar PDF</button>
+            <button id="descargarExcel">Descargar Excel</button>
+        </div>
     </div>
+
+    <script>
+        // Se agregan eventos a los botones de descarga para evitar errores en la consola
+        document.getElementById("descargarTxt").addEventListener("click", descargarResultadosTxt);
+        document.getElementById("descargarPdf").addEventListener("click", descargarResultadosPDF);
+        document.getElementById("descargarExcel").addEventListener("click", descargarResultadosExcel);
+    </script>
 
 </body>
 </html>
-

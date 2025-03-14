@@ -1,5 +1,4 @@
-// Modificado: Se mejora la estructura visual y se asegura la carga correcta de diputados y asuntos
-
+// Mejoras en la estructura visual y asegurando la carga correcta de diputados y asuntos
 let sesion_id = sessionStorage.getItem('sesion_id') || null;
 let asunto_id = sessionStorage.getItem('asunto_id') || null;
 
@@ -64,6 +63,10 @@ async function guardarAsunto() {
 // Función para mostrar el cuadro de asunto
 function mostrarCuadroAsunto(nombre) {
     const cuadroAsunto = document.getElementById('asunto-container');
+    if (!cuadroAsunto) {
+        console.error("No se encontró el contenedor de asuntos.");
+        return;
+    }
     cuadroAsunto.innerHTML = `
         <div class="asunto-card">
             <h3>Asunto en discusión</h3>
@@ -107,10 +110,24 @@ async function cargarDiputados() {
     }
 }
 
-// Cargar diputados y asuntos al iniciar la página
-window.onload = () => {
-    cargarDiputados();
-    if (asunto_id) {
-        mostrarCuadroAsunto("Asunto en curso");
+// Función para cargar el asunto guardado en sessionStorage
+async function cargarAsuntoGuardado() {
+    if (!asunto_id) return;
+
+    try {
+        const response = await fetch(`${backendURL}/api/asunto/${asunto_id}`);
+        if (!response.ok) throw new Error("No se pudo obtener el asunto");
+
+        const result = await response.json();
+        console.log('Asunto cargado:', result);
+        mostrarCuadroAsunto(result.nombre);
+    } catch (error) {
+        console.error('Error al cargar el asunto:', error);
     }
+}
+
+// Cargar diputados y asuntos al iniciar la página
+window.onload = async () => {
+    await cargarDiputados();
+    await cargarAsuntoGuardado();
 };
