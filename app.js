@@ -105,31 +105,31 @@ async function cargarDiputados() {
     }
 }
 
-// Función para registrar un voto y ocultar diputado votado
-async function registrarVoto(diputadoId, voto) {
-    if (!sesion_id || !asunto_id) {
-        alert('Debe iniciar una sesión y seleccionar un asunto antes de votar.');
-        return;
-    }
+// Función para descargar resultados en TXT
+function descargarResultadosTxt() {
+    let data = document.getElementById('resultados-content').innerText;
+    let blob = new Blob([data], { type: "text/plain" });
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "resultados_votacion.txt";
+    a.click();
+}
 
-    try {
-        const response = await fetch(`${backendURL}/api/voto`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ diputado_id: diputadoId, voto: voto, asunto_id: asunto_id, sesion_id: sesion_id })
-        });
+// Función para descargar resultados en PDF
+function descargarResultadosPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    doc.text(document.getElementById('resultados-content').innerText, 10, 10);
+    doc.save("resultados_votacion.pdf");
+}
 
-        const data = await response.json();
-        console.log('Voto registrado:', data);
-        alert(data.message || 'Voto registrado correctamente.');
-
-        // Ocultar el diputado votado
-        document.getElementById(`diputado-${diputadoId}`)?.remove();
-
-        cargarResultados(); // Cargar resultados actualizados después del voto
-    } catch (error) {
-        console.error('Error al registrar voto:', error);
-    }
+// Función para descargar resultados en Excel
+function descargarResultadosExcel() {
+    let table = document.getElementById('resultados-content').innerText.split("\n").map(row => [row]);
+    let ws = XLSX.utils.aoa_to_sheet(table);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+    XLSX.writeFile(wb, "resultados_votacion.xlsx");
 }
 
 // Función para cargar los resultados
