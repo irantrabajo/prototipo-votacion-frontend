@@ -1,7 +1,7 @@
 // Modificado: Se elimina el asunto por diputado y se agrega un solo cuadro de asunto
 
-let sesion_id = null;
-let asunto_id = null; // Nuevo: Para manejar el asunto seleccionado
+let sesion_id = sessionStorage.getItem('sesion_id') || null;
+let asunto_id = sessionStorage.getItem('asunto_id') || null; // Nuevo: Para manejar el asunto seleccionado
 
 const backendURL = "https://prototipo-votacion.onrender.com";
 
@@ -73,9 +73,7 @@ async function cargarDiputados() {
         console.log('Diputados cargados:', diputados);
 
         // Ordenar diputados por bancada según la lista
-        diputados.sort((a, b) => {
-            return ordenBancadas.indexOf(a.bancada) - ordenBancadas.indexOf(b.bancada);
-        });
+        diputados.sort((a, b) => ordenBancadas.indexOf(a.bancada) - ordenBancadas.indexOf(b.bancada));
 
         const container = document.getElementById('diputados-container');
         if (!container) {
@@ -170,9 +168,5 @@ async function cargarResultados() {
 // Cargar diputados y resultados al iniciar la página
 window.onload = () => {
     cargarDiputados();
-    if (typeof cargarResultados === "function") {
-        cargarResultados();
-    } else {
-        console.error("cargarResultados no está definido.");
-    }
+    cargarResultados();
 };
