@@ -1,273 +1,255 @@
-/****************************************************
- * app.js
- * Manejo de Sesión, Asuntos, Diputados y Resultados
- ****************************************************/
+/*******************************************************
+ * Variables globales
+ *******************************************************/
+let sesion_id = sessionStorage.getItem("sesion_id") || null;
+let asunto_id = sessionStorage.getItem("asunto_id") || null; // Para manejar el asunto seleccionado
 
-// Si ya había sesión o asunto guardados en sessionStorage, los cargamos:
-let sesion_id = sessionStorage.getItem('sesion_id') || null;
-let asunto_id = sessionStorage.getItem('asunto_id') || null;
-
-// Ajusta la URL de tu backend
+// Ajusta esta URL a la de tu backend:
 const backendURL = "https://prototipo-votacion.onrender.com";
 
-/**
- * 1. GUARDAR SESIÓN
- */
+/*******************************************************
+ * 1. Función para guardar la sesión
+ *******************************************************/
 async function guardarSesion() {
-  const nombreSesion = document.getElementById('nombreSesion')?.value;
+  const nombreSesion = document.getElementById("nombreSesion")?.value;
 
   if (!nombreSesion) {
-    alert('Por favor, ingrese el nombre de la sesión.');
+    alert("Por favor, ingrese el nombre de la sesión.");
     return;
   }
 
   try {
     const response = await fetch(`${backendURL}/api/sesion`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombreSesion })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: nombreSesion }),
     });
 
     const result = await response.json();
-    console.log('Sesión guardada:', result);
-
+    console.log("Sesión guardada:", result);
     alert(result.message);
     sesion_id = result.sesion_id;
-    sessionStorage.setItem('sesion_id', sesion_id);
+    sessionStorage.setItem("sesion_id", sesion_id);
 
-    // Mostrar el formulario de asunto
-    document.getElementById('form-asunto').style.display = 'block';
+    // Mostrar el contenedor del asunto
+    document.getElementById("asunto-container").style.display = "block";
   } catch (error) {
-    console.error('Error al registrar la sesión:', error);
+    console.error("Error al registrar la sesión:", error);
   }
 }
 
-/**
- * 2. GUARDAR ASUNTO
- */
+/*******************************************************
+ * 2. Función para guardar un asunto
+ *******************************************************/
 async function guardarAsunto() {
-  const nombreAsunto = document.getElementById('nombreAsunto')?.value;
+  const nombreAsunto = document.getElementById("nombreAsunto")?.value;
 
   if (!sesion_id) {
-    alert('Debe iniciar una sesión antes de agregar un asunto.');
+    alert("Debe iniciar una sesión antes de agregar un asunto.");
     return;
   }
   if (!nombreAsunto) {
-    alert('Por favor, ingrese un asunto.');
+    alert("Por favor, ingrese un asunto.");
     return;
   }
 
   try {
     const response = await fetch(`${backendURL}/api/asunto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombreAsunto, sesion_id: sesion_id })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: nombreAsunto, sesion_id }),
     });
 
     const result = await response.json();
-    console.log('Asunto guardado:', result);
-
     alert(result.message);
     asunto_id = result.asunto_id;
-    sessionStorage.setItem('asunto_id', asunto_id);
+    sessionStorage.setItem("asunto_id", asunto_id);
 
-    mostrarCuadroAsunto(nombreAsunto);
+    // Cargar los diputados y resultados al tener asunto
+    cargarDiputados();
+    cargarResultados();
   } catch (error) {
-    console.error('Error al registrar el asunto:', error);
+    console.error("Error al registrar el asunto:", error);
   }
 }
 
-/**
- * 3. MOSTRAR CUADRO DE ASUNTO
- */
-function mostrarCuadroAsunto(nombre) {
-  const cuadroAsunto = document.getElementById('asunto-container');
-  if (!cuadroAsunto) {
-    console.error("No se encontró el contenedor de asuntos.");
-    return;
-  }
-  cuadroAsunto.innerHTML = `
-    <div class="asunto-card">
-      <h3>Asunto en discusión</h3>
-      <p><strong>${nombre}</strong></p>
-    </div>
-  `;
-}
+/*******************************************************
+ * 3. Orden de bancadas
+ *******************************************************/
+const ordenBancadas = [
+  "PRI",
+  "PRD",
+  "MC",
+  "Representación Parlamentaria",
+  "PAN",
+  "Independientes",
+  "PT",
+  "PVEM",
+  "Morena",
+];
 
-/**
- * 4. CARGAR DIPUTADOS
- */
+/*******************************************************
+ * 4. Función para cargar los diputados
+ *******************************************************/
 async function cargarDiputados() {
   try {
     const response = await fetch(`${backendURL}/api/diputados`);
     if (!response.ok) throw new Error("No se pudo obtener la lista de diputados");
 
     let diputados = await response.json();
-    console.log('Diputados cargados:', diputados);
+    console.log("Diputados cargados:", diputados);
 
-    const container = document.getElementById('diputados-container');
+    // Ordenar diputados por bancada según la lista
+    diputados.sort(
+      (a, b) => ordenBancadas.indexOf(a.bancada) - ordenBancadas.indexOf(b.bancada)
+    );
+
+    const container = document.getElementById("diputados-container");
     if (!container) {
       console.error("No se encontró el contenedor de diputados.");
       return;
     }
-    container.innerHTML = '';
 
-    // EJEMPLO: Si quieres ordenarlos por bancadas, crea un ordenBancadas y haz un sort
-    // const ordenBancadas = ["PRI", "PRD", "MC", "RP", "PAN", "Independientes", "PT", "PVEM", "Morena"];
-    // diputados.sort((a, b) => ordenBancadas.indexOf(a.bancada) - ordenBancadas.indexOf(b.bancada));
+    container.innerHTML = "";
 
-    diputados.forEach(diputado => {
+    diputados.forEach((diputado) => {
+      const foto = diputado.foto_url ? diputado.foto_url : "placeholder.png";
       container.innerHTML += `
         <div class="diputado-card" id="diputado-${diputado.id}">
-          <img src="${diputado.foto_url ? diputado.foto_url : 'placeholder.png'}" alt="${diputado.nombre}">
+          <img src="${foto}" alt="${diputado.nombre}" />
           <h3>${diputado.nombre}</h3>
-          <p><strong>Distrito:</strong> ${diputado.distrito || ''}</p>
-          <p><strong>Bancada:</strong> ${diputado.bancada || ''}</p>
-          <button onclick="registrarVoto(${diputado.id}, 'a favor')">A favor</button>
-          <button onclick="registrarVoto(${diputado.id}, 'en contra')">En contra</button>
-          <button onclick="registrarVoto(${diputado.id}, 'abstenciones')">Abstenciones</button>
-          <button onclick="registrarVoto(${diputado.id}, 'ausente')">Ausente</button>
+          <p><strong>Distrito:</strong> ${diputado.distrito || ""}</p>
+          <p><strong>Bancada:</strong> ${diputado.bancada || ""}</p>
+          <div>
+            <button onclick="registrarVoto(${diputado.id}, 'a favor')">A favor</button>
+            <button onclick="registrarVoto(${diputado.id}, 'en contra')">En contra</button>
+            <button onclick="registrarVoto(${diputado.id}, 'abstenciones')">Abstenciones</button>
+            <button onclick="registrarVoto(${diputado.id}, 'ausente')">Ausente</button>
+          </div>
         </div>
       `;
     });
   } catch (error) {
-    console.error('Error al cargar diputados:', error);
+    console.error("Error al cargar diputados:", error);
   }
 }
 
-/**
- * 5. REGISTRAR VOTO
- */
+/*******************************************************
+ * 5. Registrar voto y ocultar al diputado votado
+ *******************************************************/
 async function registrarVoto(diputadoId, voto) {
   if (!sesion_id || !asunto_id) {
-    alert('Debe iniciar una sesión y seleccionar un asunto antes de votar.');
+    alert("Debe iniciar una sesión y seleccionar un asunto antes de votar.");
     return;
   }
 
   try {
     const response = await fetch(`${backendURL}/api/voto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         diputado_id: diputadoId,
-        voto: voto,
-        asunto_id: asunto_id,
-        sesion_id: sesion_id
-      })
+        voto,
+        asunto_id,
+        sesion_id,
+      }),
     });
 
     const data = await response.json();
-    console.log('Voto registrado:', data);
-    alert(data.message || 'Voto registrado correctamente.');
+    console.log("Voto registrado:", data);
+    alert(data.message || "Voto registrado correctamente.");
 
     // Ocultar el diputado votado
-    const dipCard = document.getElementById(`diputado-${diputadoId}`);
-    if (dipCard) dipCard.remove();
+    const cardDiputado = document.getElementById(`diputado-${diputadoId}`);
+    if (cardDiputado) {
+      cardDiputado.remove();
+    }
 
-    // Volver a cargar resultados
+    // Cargar resultados actualizados
     cargarResultados();
   } catch (error) {
-    console.error('Error al registrar voto:', error);
+    console.error("Error al registrar voto:", error);
   }
 }
 
-/**
- * 6. CARGAR RESULTADOS
- */
+/*******************************************************
+ * 6. Funciones de descarga (TXT, PDF, Excel)
+ *******************************************************/
+
+// Descarga TXT
+function descargarResultadosTxt() {
+  let data = document.getElementById("resultados-content").innerText;
+  let blob = new Blob([data], { type: "text/plain" });
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "resultados_votacion.txt";
+  a.click();
+}
+
+// Descarga PDF
+function descargarResultadosPDF() {
+  const { jsPDF } = window.jspdf;
+  let doc = new jsPDF();
+  doc.text(document.getElementById("resultados-content").innerText, 10, 10);
+  doc.save("resultados_votacion.pdf");
+}
+
+// Descarga Excel
+function descargarResultadosExcel() {
+  let data = document.getElementById("resultados-content").innerText.split("\n");
+  let aoa = data.map((row) => [row]); // array of arrays
+  let ws = XLSX.utils.aoa_to_sheet(aoa);
+  let wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+  XLSX.writeFile(wb, "resultados_votacion.xlsx");
+}
+
+/*******************************************************
+ * 7. Cargar resultados
+ *******************************************************/
 async function cargarResultados() {
   try {
     const response = await fetch(`${backendURL}/api/resultados`);
     if (!response.ok) throw new Error("No se pudieron obtener los resultados");
 
     const resultados = await response.json();
-    console.log('Resultados cargados:', resultados);
+    console.log("Resultados cargados:", resultados);
 
-    const container = document.getElementById('resultados-content');
+    const container = document.getElementById("resultados-content");
     if (!container) {
       console.error("No se encontró el contenedor de resultados.");
       return;
     }
-    container.innerHTML = '';
 
-    resultados.forEach(r => {
+    container.innerHTML = "";
+
+    resultados.forEach((resultado) => {
       container.innerHTML += `
         <div class="resultado-card">
-          <h3>${r.nombre}</h3>
-          <p><strong>A favor:</strong> ${r.a_favor}</p>
-          <p><strong>En contra:</strong> ${r.en_contra}</p>
-          <p><strong>Abstenciones:</strong> ${r.abstenciones}</p>
-          <p><strong>Ausente:</strong> ${r.ausente}</p>
+          <h3>${resultado.nombre}</h3>
+          <p><strong>A favor:</strong> ${resultado.a_favor}</p>
+          <p><strong>En contra:</strong> ${resultado.en_contra}</p>
+          <p><strong>Abstenciones:</strong> ${resultado.abstenciones}</p>
+          <p><strong>Ausente:</strong> ${resultado.ausente}</p>
         </div>
       `;
     });
   } catch (error) {
-    console.error('Error al cargar resultados:', error);
+    console.error("Error al cargar resultados:", error);
   }
 }
 
-/**
- * 7. DESCARGAR RESULTADOS (TXT, PDF, EXCEL)
- */
-function descargarResultadosTxt() {
-  const data = document.getElementById('resultados-content')?.innerText || "Sin resultados";
-  const blob = new Blob([data], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "resultados_votacion.txt";
-  a.click();
-}
-
-function descargarResultadosPDF() {
-  const { jsPDF } = window.jspdf;
-  let doc = new jsPDF();
-  let data = document.getElementById('resultados-content')?.innerText || "Sin resultados";
-  doc.text(data, 10, 10);
-  doc.save("resultados_votacion.pdf");
-}
-
-function descargarResultadosExcel() {
-  let data = document.getElementById('resultados-content')?.innerText.split("\n") || ["Sin resultados"];
-  let table = data.map(row => [row]);
-  let ws = XLSX.utils.aoa_to_sheet(table);
-  let wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Resultados");
-  XLSX.writeFile(wb, "resultados_votacion.xlsx");
-}
-
-/**
- * 8. CARGAR ASUNTO GUARDADO (SI EXISTE)
- */
-async function cargarAsuntoGuardado() {
-  if (!asunto_id) return; // Si no hay asunto guardado, salimos
-  try {
-    // EJEMPLO: Si tienes un endpoint /api/asunto/:id para obtener un asunto
-    // const response = await fetch(`${backendURL}/api/asunto/${asunto_id}`);
-    // if (!response.ok) throw new Error("No se pudo obtener el asunto");
-    // const asunto = await response.json();
-    // mostrarCuadroAsunto(asunto.nombre);
-
-    // Si no tienes ese endpoint, simplemente puedes mostrar el "nombreAsunto"
-    // que guardaste en sessionStorage si lo hubieras guardado.
-    // Por ahora lo dejamos sin hacer nada o con un console.log.
-    console.log("Asunto ya guardado en sessionStorage. ID:", asunto_id);
-  } catch (error) {
-    console.error("Error al cargar asunto guardado:", error);
-  }
-}
-
-/**
- * 9. Al cargar la página
- */
-window.onload = async () => {
-  // Cargar diputados y resultados
-  await cargarDiputados();
-  await cargarResultados();
-
-  // Si ya hay sesion, mostramos el form de asunto
-  if (sesion_id) {
-    document.getElementById('form-asunto').style.display = 'block';
+/*******************************************************
+ * 8. Inicialización al cargar la página
+ *******************************************************/
+window.onload = () => {
+  // Si ya existe una sesión previa, mostramos el contenedor de asunto
+  const asuntoContainer = document.getElementById("asunto-container");
+  if (asuntoContainer) {
+    asuntoContainer.style.display = sesion_id ? "block" : "none";
   }
 
-  // Cargar asunto guardado (si existe)
-  await cargarAsuntoGuardado();
+  // Cargar la lista de diputados y resultados
+  cargarDiputados();
+  cargarResultados();
 };
