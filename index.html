@@ -4,18 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prototipo de Votación</title>
-
-  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- Estilos -->
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Librerías para exportar PDF y Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- Cargar tu script después de que el DOM esté listo -->
+  <!-- Tu script (con defer para cargarlo después del DOM) -->
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -28,7 +24,7 @@
     <button onclick="guardarSesion()">Empezar Votación</button>
   </div>
 
-  <!-- Contenedor para el asunto (se muestra luego de iniciar sesión) -->
+  <!-- Contenedor para el asunto (invisible hasta que se cree la sesión) -->
   <div id="asunto-container" style="display: none;">
     <label for="nombreAsunto">Nombre del asunto:</label>
     <input type="text" id="nombreAsunto" placeholder="Ejemplo: Reforma Energética" />
@@ -51,19 +47,11 @@
     <button id="descargarExcel">Descargar Excel</button>
   </div>
 
-  <!-- Vincular funciones de descarga a los botones -->
+  <!-- Eventos para los botones de descarga -->
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      document
-        .getElementById("descargarTxt")
-        .addEventListener("click", descargarResultadosTxt);
-      document
-        .getElementById("descargarPdf")
-        .addEventListener("click", descargarResultadosPDF);
-      document
-        .getElementById("descargarExcel")
-        .addEventListener("click", descargarResultadosExcel);
-    });
+    document.getElementById("descargarTxt").addEventListener("click", descargarResultadosTxt);
+    document.getElementById("descargarPdf").addEventListener("click", descargarResultadosPDF);
+    document.getElementById("descargarExcel").addEventListener("click", descargarResultadosExcel);
   </script>
 </body>
 </html>
