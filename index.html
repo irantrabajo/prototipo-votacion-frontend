@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <button onclick="toggleModoOscuro()" id="modo-btn">🌙 Modo Oscuro</button>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prototipo de Votación</title>
@@ -15,6 +17,12 @@
   <script defer src="app.js"></script>
 </head>
 <body>
+  <div id="bienvenida" class="pantalla-bienvenida">
+    <h1>🗳️ Bienvenido al Sistema de Votación</h1>
+    <p>Por favor, inicia una sesión para comenzar.</p>
+    <button onclick="iniciarApp()">Comenzar</button>
+  </div>
+  
   <h1>Votación de Diputados</h1>
 
   <!-- Contenedor para iniciar la sesión -->

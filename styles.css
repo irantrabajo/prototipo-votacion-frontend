@@ -1,5 +1,5 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
     background-color: #800000; /* Guinda */
     color: white;
     text-align: center;
@@ -40,17 +40,33 @@ button {
     font-weight: bold;
 }
 
+  
+
+
 button:hover {
     background-color: #ffaa00;
 }
 
-input {
+input, select, textarea {
     width: 90%;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+    max-width: 400px;
+    padding: 10px 15px;
+    margin: 10px auto;
+    border-radius: 8px;
+    border: 2px solid #800000;
+    font-size: 1rem;
+    color: #333;
+    background-color: #fdfdfd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
+input:focus, textarea:focus, select:focus {
+    border-color: #a00000;
+    outline: none;
+    box-shadow: 0 0 5px rgba(160, 0, 0, 0.5);
+}
+
 
 .botones {
     display: flex;
@@ -63,21 +79,197 @@ input {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    gap: 1rem;
 }
 
+/* 💅 Diputado con animación y estilo glam */
 .diputado-card {
     background: white;
     color: black;
-    padding: 10px;
+    padding: 15px;
     margin: 10px;
-    border-radius: 10px;
+    border-radius: 1rem;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     text-align: center;
     width: 200px;
+    transition: transform 0.3s ease;
+    animation: aparecer 0.5s ease forwards;
+    opacity: 0;
+}
+
+.diputado-card:hover {
+    transform: translateY(-5px);
 }
 
 .diputado-card img {
-    max-width: 100px;
-    height: auto;
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
     border-radius: 50%;
+    margin-bottom: 10px;
+    border: 2px solid #800000; /* Guinda */
 }
+
+/* ✨ Animación cute */
+@keyframes aparecer {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Botones dentro de cada diputado */
+.diputado-card button {
+    margin: 4px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #800000;
+    color: white;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.diputado-card button:hover {
+    background-color: #a00000;
+    
+}
+
+/* 💼 Estilo para las tarjetas de resultados */
+.resultado-card {
+    background: white;
+    color: black;
+    padding: 15px;
+    margin: 15px;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    width: 250px;
+    text-align: left;
+    font-size: 0.95rem;
+    animation: slideUp 0.5s ease forwards;
+    opacity: 0;
+    transition: transform 0.3s ease;
+}
+
+.resultado-card:hover {
+    transform: translateY(-5px);
+}
+
+/* ✨ Animación de entrada para resultados */
+@keyframes slideUp {
+    0% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 🎯 Contenedor general de los resultados */
+#resultados-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 30px;
+}
+
+/* ✨ Transiciones suaves para todo */
+* {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  /* 🎬 Animación al cargar la página */
+  body {
+    opacity: 0;
+    animation: fadeIn 0.7s ease forwards;
+  }
+  
+  /* 💨 Keyframes para efecto fade-in */
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .pantalla-bienvenida {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #800000;
+    color: white;
+    padding: 2rem;
+  }
+  
+  .pantalla-bienvenida h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .pantalla-bienvenida button {
+    background-color: #ffcc00;
+    color: black;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  .pantalla-bienvenida button:hover {
+    background-color: #ffaa00;
+  }
+  
+  /* 🌑 Modo oscuro */
+body.modo-oscuro {
+    background-color: #121212;
+    color: white;
+  }
+  
+  body.modo-oscuro .diputado-card,
+  body.modo-oscuro .resultado-card,
+  body.modo-oscuro .card {
+    background-color: #1e1e1e;
+    color: white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+  }
+  
+  body.modo-oscuro button {
+    background-color: #333;
+    color: white;
+  }
+  
+  body.modo-oscuro button:hover {
+    background-color: #555;
+  }
+  
+  body.modo-oscuro input {
+    background-color: #222;
+    color: white;
+    border: 1px solid #444;
+  }
+
+  .pantalla-bienvenida {
+    animation: fadeInScale 0.8s ease forwards;
+    opacity: 0;
+  }
+  
+  @keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  

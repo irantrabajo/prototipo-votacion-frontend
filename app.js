@@ -38,6 +38,11 @@ async function guardarSesion() {
     console.log('Sesión guardada:', result);
     alert(result.message);
 
+    if (navigator.vibrate) {
+        navigator.vibrate([100]);
+      }
+      
+
     // Guardamos en sessionStorage
     sesion_id = result.sesion_id;
     sessionStorage.setItem('sesion_id', sesion_id);
@@ -105,7 +110,10 @@ async function cargarDiputados() {
     container.innerHTML = '';
 
     diputados.forEach(diputado => {
-      const foto = diputado.foto_url ? diputado.foto_url : 'placeholder.png';
+      const foto = diputado.foto
+        ? `${backendURL}/fotos/${diputado.foto}`
+        : 'imagenes_Diputados/placeholder.png';
+
       container.innerHTML += `
         <div class="diputado-card" id="diputado-${diputado.id}">
           <img src="${foto}" alt="${diputado.nombre}">
@@ -149,6 +157,9 @@ async function registrarVoto(diputadoId, voto) {
     console.log('Voto registrado:', data);
     alert(data.message || 'Voto registrado correctamente.');
 
+    navigator.vibrate([100, 50, 100]); // vibra, pausa, vibra (ritmo de votación fuerte)
+
+
     // Ocultar el diputado votado
     const cardDiputado = document.getElementById(`diputado-${diputadoId}`);
     if (cardDiputado) cardDiputado.remove();
@@ -169,6 +180,11 @@ function descargarResultadosTxt() {
   a.href = URL.createObjectURL(blob);
   a.download = "resultados_votacion.txt";
   a.click();
+
+  if (navigator.vibrate) {
+    navigator.vibrate([80]);
+  }
+  
 }
 
 // Función para descargar resultados en PDF
@@ -178,6 +194,11 @@ function descargarResultadosPDF() {
   let data = document.getElementById('resultados-content').innerText || "Sin datos";
   doc.text(data, 10, 10);
   doc.save("resultados_votacion.pdf");
+
+  if (navigator.vibrate) {
+    navigator.vibrate([80]);
+  }
+  
 }
 
 // Función para descargar resultados en Excel
@@ -189,6 +210,11 @@ function descargarResultadosExcel() {
   let wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Resultados");
   XLSX.writeFile(wb, "resultados_votacion.xlsx");
+
+  if (navigator.vibrate) {
+    navigator.vibrate([80]);
+  }
+  
 }
 
 // Función para cargar los resultados
@@ -224,12 +250,49 @@ async function cargarResultados() {
   }
 }
 
+function toggleModoOscuro() {
+    const body = document.body;
+    body.classList.toggle("modo-oscuro");
+  
+    // Cambiar texto del botón
+    const btn = document.getElementById("modo-btn");
+    const esOscuro = body.classList.contains("modo-oscuro");
+    btn.textContent = esOscuro ? "☀️ Modo Claro" : "🌙 Modo Oscuro";
+  
+    // Guardar preferencia
+    localStorage.setItem("modoOscuro", esOscuro);
+  }
+  
+  
 // Al cargar la página, cargamos diputados y resultados
 window.onload = () => {
-  // Si ya hay una sesion_id guardada, mostramos el contenedor de asunto
   if (sesion_id) {
     document.getElementById('asunto-container').style.display = 'block';
   }
   cargarDiputados();
   cargarResultados();
 };
+
+function iniciarApp() {
+    document.getElementById('bienvenida').style.display = 'none';
+    document.getElementById('asunto-container').style.display = sesion_id ? 'block' : 'none';
+    cargarDiputados();
+    cargarResultados();
+  }
+  
+  window.onload = () => {
+    // 🌓 Restaurar modo oscuro si estaba activado
+    const modoGuardado = localStorage.getItem("modoOscuro") === "true";
+    if (modoGuardado) {
+      document.body.classList.add("modo-oscuro");
+      const btn = document.getElementById("modo-btn");
+      if (btn) btn.textContent = "☀️ Modo Claro";
+    }
+  
+    // ⬇️ Ocultar todo al inicio y mostrar bienvenida
+    document.getElementById('diputados-container').style.display = 'none';
+    document.getElementById('asunto-container').style.display = 'none';
+    document.getElementById('resultados-content').style.display = 'none';
+  };
+  
+  
