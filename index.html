@@ -1,65 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <button onclick="toggleModoOscuro()" id="modo-btn">🌙 Modo Oscuro</button>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prototipo de Votación</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="styles.css" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  
   <!-- Librerías para exportar PDF y Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- Tu script (con defer para cargarlo después del DOM) -->
+  <!-- Tu script principal -->
   <script defer src="app.js"></script>
 </head>
 <body>
+  <button onclick="toggleModoOscuro()" id="modo-btn">🌙 Modo Oscuro</button>
+
   <div id="bienvenida" class="pantalla-bienvenida">
     <h1>🗳️ Bienvenido al Sistema de Votación</h1>
     <p>Por favor, inicia una sesión para comenzar.</p>
     <button onclick="iniciarApp()">Comenzar</button>
   </div>
-  
+
   <h1>Votación de Diputados</h1>
 
-  <!-- Contenedor para iniciar la sesión -->
   <div id="sesion-container">
     <label for="nombreSesion">Nombre de la sesión:</label>
     <input type="text" id="nombreSesion" placeholder="Ejemplo: Sesión Ordinaria 2025" />
     <button onclick="guardarSesion()">Empezar Votación</button>
   </div>
 
-  <!-- Contenedor para el asunto (invisible hasta que se cree la sesión) -->
   <div id="asunto-container" style="display: none;">
     <label for="nombreAsunto">Nombre del asunto:</label>
     <input type="text" id="nombreAsunto" placeholder="Ejemplo: Reforma Energética" />
     <button onclick="guardarAsunto()">Guardar Asunto</button>
   </div>
 
-  <!-- Contenedor de los diputados -->
   <div id="diputados-container">
-    <!-- Aquí se cargarán los datos de los diputados dinámicamente -->
+    <!-- Aquí se cargarán los datos de los diputados -->
   </div>
 
-  <!-- Contenedor de resultados -->
   <div id="resultados">
     <h2>Resultados de la Votación</h2>
     <div id="resultados-content"></div>
 
-    <!-- Botones de descarga -->
-    <button id="descargarTxt">Descargar TXT</button>
-    <button id="descargarPdf">Descargar PDF</button>
-    <button id="descargarExcel">Descargar Excel</button>
+    <button id="descargarTxt" onclick="descargarResultadosTxt()">Descargar TXT</button>
+    <button id="descargarPdf" onclick="descargarResultadosPDF()">Descargar PDF</button>
+    <button id="descargarExcel" onclick="descargarResultadosExcel()">Descargar Excel</button>
   </div>
 
-  <!-- Eventos para los botones de descarga -->
-  <script>
-    document.getElementById("descargarTxt").addEventListener("click", descargarResultadosTxt);
-    document.getElementById("descargarPdf").addEventListener("click", descargarResultadosPDF);
-    document.getElementById("descargarExcel").addEventListener("click", descargarResultadosExcel);
-  </script>
 </body>
 </html>
