@@ -44,3 +44,10 @@ async function cargarDiputados() {
     console.error('Error al cargar diputados:', error);
   }
 }
+// Hacer funciones globales para que el HTML pueda usarlas
+window.iniciarApp = iniciarApp;
+window.guardarSesion = guardarSesion;
+window.guardarAsunto = guardarAsunto;
+window.descargarResultadosTxt = descargarResultadosTxt;
+window.descargarResultadosPDF = descargarResultadosPDF;
+window.descargarResultadosExcel = descargarResultadosExcel;
