@@ -2,54 +2,155 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Prototipo de Votación</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  
-  <!-- Librerías para exportar PDF y Excel -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- Tu script principal -->
-  <script defer src="app.js"></script>
+  <!-- Tu CSS -->
+  <link rel="stylesheet" href="./styles.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Librerías externas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+  <!-- Tu lógica JS -->
+  <script src="./app.js" defer></script>
 </head>
 <body>
-  <button onclick="toggleModoOscuro()" id="modo-btn">🌙 Modo Oscuro</button>
+  <div id="particles-js"></div>
 
-  <div id="bienvenida" class="pantalla-bienvenida">
-    <h1>🗳️ Bienvenido al Sistema de Votación</h1>
-    <p>Por favor, inicia una sesión para comenzar.</p>
-    <button onclick="iniciarApp()">Comenzar</button>
+  <!-- 🔐 LOGIN PAGE -->
+  <div class="login-page">
+    <section id="login">
+      <div class="login-container">
+        <h1 class="titulo-general">
+          Dirección de Enlace Legislativo<br>
+          <span>Sistema de Votación Parlamentaria</span>
+        </h1>
+        <h2>🔐 Iniciar Sesión</h2>
+        <form id="loginForm">
+          <label for="usuarioLogin">Usuario</label>
+          <input type="text" id="usuarioLogin" required />
+          <label for="passwordLogin">Contraseña</label>
+          <input type="password" id="passwordLogin" required />
+          <button type="submit">Ingresar</button>
+          <p id="loginError" class="hidden error">⚠️ Usuario o contraseña incorrectos.</p>
+        </form>
+        <p class="olvido">
+          ¿Olvidaste tu contraseña?
+          <a href="https://wa.me/4433664188" target="_blank">Contáctanos por WhatsApp</a>
+        </p>
+      </div>
+    </section>
   </div>
 
-  <h1>Votación de Diputados</h1>
-
-  <div id="sesion-container">
-    <label for="nombreSesion">Nombre de la sesión:</label>
-    <input type="text" id="nombreSesion" placeholder="Ejemplo: Sesión Ordinaria 2025" />
-    <button onclick="guardarSesion()">Empezar Votación</button>
+  <!-- 📦 MAIN APP (se muestra después de login) -->
+  <div class="sidebar hidden">
+    <h2>🗳️ Votación</h2>
+    <a onclick="showSection('uploadOrden')">Orden del Día</a>
+    <a onclick="showSection('sesion')">Sesión</a>
+    <a onclick="showSection('resultados')">Resultados</a>
+    <a onclick="showSection('sesionesPasadas')">Sesiones Pasadas</a>
   </div>
 
-  <div id="asunto-container" style="display: none;">
-    <label for="nombreAsunto">Nombre del asunto:</label>
-    <input type="text" id="nombreAsunto" placeholder="Ejemplo: Reforma Energética" />
-    <button onclick="guardarAsunto()">Guardar Asunto</button>
+  <div class="main hidden">
+    <h1 class="titulo-general">
+      Dirección de Enlace Legislativo<br>
+      <span>Sistema de Votación Parlamentaria</span>
+    </h1>
+
+    <!-- 0) Carga Orden del Día -->
+    <section id="uploadOrden" class="hidden">
+      <h2>📄 Carga la Orden del Día</h2>
+      <input type="file" id="fileOrden" accept="application/pdf" />
+      <button onclick="uploadOrden()">Procesar Orden del Día</button>
+      <div id="previewOrden" class="hidden" style="margin-top:1rem;">
+        <h3 id="previewSesion"></h3>
+        <p id="previewNombreSesionOriginal" style="color:#555;"></p>
+        <ul id="previewAsuntos"></ul>
+        <div class="botones">
+          <button onclick="confirmarOrden()">✅ Confirmar e Iniciar Votación</button>
+        </div>
+      </div>
+    </section>
+    <!-- 1) Bienvenida -->
+    <section id="bienvenida" class="hidden">
+      <h2>🗳️ Bienvenido al Sistema de Votación</h2>
+      <p>Inicia una sesión para comenzar.</p>
+      <button onclick="iniciarApp()">Comenzar</button>
+    </section>
+
+    <!-- 2) Sesión -->
+    <section id="sesion" class="hidden">
+      <div id="sesionActiva" class="hidden">
+        <p>Sesión activa: <strong id="nombreSesionActivo"></strong></p>
+      </div>
+      <div id="registroSesion">
+        <label for="nombreSesion">Nombre de la sesión:</label><br/>
+        <input type="text" id="nombreSesion" placeholder="Ej.: Sesión Ordinaria 2025" />
+        <button onclick="guardarSesion()">Empezar Votación</button>
+      </div>
+    </section>
+
+    <!-- 3) Asunto -->
+    <section id="asunto" class="hidden">
+      <h2>📝 Selecciona un Asunto</h2>
+      <select id="listaAsuntos"></select>
+      <button onclick="guardarAsunto()">Iniciar Votación</button>
+    </section>
+
+    <!-- 4) Diputados -->
+    <section id="diputados" class="hidden">
+      <h2>Vota por cada diputado:</h2>
+      <input
+        type="search"
+        id="buscadorDiputado"
+        placeholder="Buscar diputado por nombre..."
+        oninput="filtrarDiputados()"
+        enterkeyhint="search"
+        inputmode="search"
+        style="margin-bottom:1rem; padding:0.5rem; width:100%; max-width:400px; border:2px solid #800000; border-radius:8px;"
+      />
+
+      <div id="diputados-container"></div>
+    </section>
+
+    <!-- 5) Resultados por Asunto -->
+    <section id="resultados" class="hidden">
+      <h2>Resumen de Resultados</h2>
+      <div id="resumenSesion"></div>
+      <canvas id="chartResumen" class="hidden"></canvas>
+      <div id="botonSiguienteAsunto" class="hidden botones">
+        <button onclick="avanzarAlSiguienteAsunto()">⏭️ Siguiente Asunto</button>
+      </div>
+      <div class="botones">
+        <button onclick="exportAsuntoTXT()">Descargar Asunto (TXT)</button>
+        <button onclick="exportAsuntoPDF()">Descargar Asunto (PDF)</button>
+        <button onclick="exportAsuntoXLS()">Descargar Asunto (Excel)</button>
+      </div>
+      <hr/>
+      <div class="botones">
+        <button onclick="mostrarResumenSesion()">Ver Resumen de Sesión</button>
+        <button onclick="exportSesionTXT()">Descargar Sesión (TXT)</button>
+        <button onclick="exportSesionPDF()">Descargar Sesión (PDF)</button>
+        <button onclick="exportSesionXLS()">Descargar Sesión (Excel)</button>
+      </div>
+      <pre id="resumenSesionCompleto" class="hidden"></pre>
+    </section>
+
+    <!-- 7) Sesiones pasadas -->
+    <section id="sesionesPasadas" class="hidden">
+      <h2>🗂️ Sesiones Pasadas</h2>
+      <ul id="listaSesionesPasadas"></ul>
+    </section>
+
+    <!-- 6) Terminar Sesión -->
+    <div id="botonTerminarSesion" class="hidden">
+      <button onclick="terminarSesion()">🔁 Terminar Sesión</button>
+    </div>
   </div>
-
-  <div id="diputados-container">
-    <!-- Aquí se cargarán los datos de los diputados -->
-  </div>
-
-  <div id="resultados">
-    <h2>Resultados de la Votación</h2>
-    <div id="resultados-content"></div>
-
-    <button id="descargarTxt" onclick="descargarResultadosTxt()">Descargar TXT</button>
-    <button id="descargarPdf" onclick="descargarResultadosPDF()">Descargar PDF</button>
-    <button id="descargarExcel" onclick="descargarResultadosExcel()">Descargar Excel</button>
-  </div>
-
 </body>
 </html>
