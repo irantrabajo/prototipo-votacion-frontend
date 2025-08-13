@@ -1,275 +1,423 @@
+/* Reset y tipografía */
 body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #800000; /* Guinda */
-    color: white;
-    text-align: center;
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #ffffff; /* FONDO BLANCO */
+  color: #800000; /* TEXTO GUINDA */
+  text-align: center;
+  animation: fadeIn 0.7s ease forwards;
+  background: linear-gradient(-45deg, #ffffff, #fceeee, #fff9f9, #fceeee);
+  background-size: 400% 400%;
+  animation: fondoAnimado 15s ease infinite;
 }
 
-h1 {
-    margin-top: 20px;
-    font-size: 2em;
+.hidden { display: none !important }
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 200px; height: 100%;
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+  color: #800000;
+  z-index: 1000;
+}
+.sidebar h2 { margin-top: 0; }
+.sidebar a {
+  display: block;
+  margin: 1rem 0;
+  color: #800000;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.container {
+.main {
+  margin-left: 220px;
+  padding: 1rem;
+  padding-top: 0.5rem;
+  min-height: calc(100vh - 1rem);
+  display: block;
+}
+
+/* Tarjetas de diputados */
+#diputados-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.diputado-card {
+  background: #fff;
+  color: #000;
+  width: 200px;
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: transform .3s;
+}
+.diputado-card:hover { transform: translateY(-5px); }
+
+.diputado-card img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: .5rem;
+  border: 2px solid #800000;
+}
+
+/* Botones */
+button {
+  background: #800000;
+  color: #fff;
+  border: none;
+  padding: .6rem 1rem;
+  margin: .5rem;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .3s;
+  white-space: nowrap;
+}
+button:hover { background: #a00000; }
+
+/* Inputs */
+#sesion input,
+#asunto input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #800000;
+  color: #800000;
+  padding: .4rem .2rem;
+  margin: .5rem;
+  font-size: 1rem;
+  width: 200px;
+}
+#sesion input::placeholder,
+#asunto input::placeholder {
+  color: rgba(128,0,0,0.6);
+}
+
+/* Login */
+.login-container {
+  max-width: 400px;
+  margin: 7rem auto 2rem;
+  padding: 2rem;
+  background-color: #fff;
+  border: 2px solid #800000;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  font-family: 'Poppins', sans-serif;
+  animation: floatIn 1.2s ease-out;
+}
+
+/* Mobile responsiveness */
+@media screen and (max-width: 768px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
     display: flex;
+    justify-content: space-around;
     flex-wrap: wrap;
-    justify-content: center;
-    padding: 20px;
+    box-shadow: none;
+    border-bottom: 2px solid #800000;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 1rem 0.5rem;
+  }
+
+  .diputado-card {
+    width: 90%;
+  }
+
+  button, input, select {
+    width: 90% !important;
+    max-width: 400px;
+  }
+
+  .login-container {
+    margin: 2rem 1rem;
+    width: 90%;
+    padding: 1rem;
+  }
+
+  .botones {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  #chartResumen {
+    width: 100% !important;
+    height: auto !important;
+  }
 }
 
-.card {
-    background: white;
-    color: black;
-    padding: 15px;
-    margin: 15px auto;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    max-width: 400px;
+/* Texto completo de sesión */
+#resumenSesionCompleto {
+  white-space: pre-wrap;
+  background: rgba(128,0,0,0.1); /* más suave */
+  padding: 1rem;
+  border-radius: 5px;
+  margin-top: 1rem;
+  text-align: left;
+  color: #800000;
+}
+
+/* Botones agrupados */
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.punto-rojo {
+  width: 10px;
+  height: 10px;
+  background-color: #800000;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  margin-top: 0.2rem; /* centrado fino */
+}
+.asunto-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  width: 100%;
+  gap: 0.75rem;
+  align-items: center; /* ← centra verticalmente */
+  min-height: 60px; /* ← asegura altura pareja */
+}
+
+.caja-asunto {
+  background-color: rgba(255,255,255,0.6);
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #000;
+  flex-grow: 1;
+  text-align: left;
+  word-break: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  flex-shrink: 1;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
 }
 
 button {
-    background-color: #ffcc00;
-    color: black;
-    border: none;
-    padding: 10px 15px;
-    margin-top: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
+  white-space: nowrap;
 }
 
-  
-
-
-button:hover {
-    background-color: #ffaa00;
+li.asunto-item {
+  list-style: none;
+}
+.caja-asunto {
+  overflow-wrap: anywhere;
 }
 
-input, select, textarea {
-    width: 90%;
-    max-width: 400px;
-    padding: 10px 15px;
-    margin: 10px auto;
-    border-radius: 8px;
-    border: 2px solid #800000;
-    font-size: 1rem;
-    color: #333;
-    background-color: #fdfdfd;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+#previewAsuntos {
+  padding-left: 0;
+  text-align: left;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 auto;
 }
 
-input:focus, textarea:focus, select:focus {
-    border-color: #a00000;
-    outline: none;
-    box-shadow: 0 0 5px rgba(160, 0, 0, 0.5);
+.asunto-item button {
+  align-self: flex-start; /* mantiene botón en la parte de arriba */
+  flex-shrink: 0; /* evita que se encoja */
+  margin-top: 0.5rem;
+}
+
+#botonSiguienteAsunto button {
+  padding: 12px 24px;
+  font-size: 18px;
+  background-color: #800000;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+#botonSiguienteAsunto button:hover {
+  background-color: #a00000;
+  transform: translateY(-2px) scale(1.03);
+}
+/* --------------------------- */
+/* LOGIN FORMULARIO */
+/* --------------------------- */
+.login-container {
+  max-width: 400px;
+  margin: 7rem auto 2rem;
+  padding: 2rem;
+  background-color: #fff;
+  border: 2px solid #800000; /* guinda */
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  font-family: 'Poppins', sans-serif;
+}
+
+.login-container h2 {
+  text-align: center;
+  color: #800000;
+  margin-bottom: 1.5rem;
+}
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-container label {
+  font-weight: 600;
+  color: #333;
+}
+
+.login-container input {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.login-container button {
+  background-color: #800000;
+  color: #fff;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-container button:hover {
+  background-color: #a00000;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 💫 Fondo animado sutil */
+body {
+  background: linear-gradient(-45deg, #ffffff, #fceeee, #fff9f9, #fceeee);
+  background-size: 400% 400%;
+  animation: fondoAnimado 15s ease infinite;
+}
+
+/* 🔁 Animación */
+@keyframes fondoAnimado {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 🔐 Centramos el login */
+#login {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.titulo-login {
+  text-align: center;
+  color: #800000;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.titulo-login span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #660000;
+}
+
+.titulo-general {
+  text-align: center;
+  color: #800000;
+  font-size: 1.8rem;   /* ligeramente más pequeño */
+  margin-top: 1rem;    /* antes 3rem */
+  margin-bottom: 1rem; /* antes 2rem */
+  font-weight: 700;
 }
 
 
-.botones {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 15px;
+.titulo-general span {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #660000;
 }
 
-#diputados-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding-top: 3rem;
+  /*margin-left: 200px; /* para que no lo empuje la sidebar */
 }
 
-/* 💅 Diputado con animación y estilo glam */
-.diputado-card {
-    background: white;
-    color: black;
-    padding: 15px;
-    margin: 10px;
-    border-radius: 1rem;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    width: 200px;
-    transition: transform 0.3s ease;
-    animation: aparecer 0.5s ease forwards;
+.login-container {
+  animation: floatIn 1.2s ease-out;
+}
+
+@keyframes floatIn {
+  0% {
     opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.diputado-card:hover {
-    transform: translateY(-5px);
+#uploadOrden h2 {
+  margin-top: 0.5rem;   /* menos espacio arriba */
+  margin-bottom: 1rem;  /* espacio abajo suficiente */
+  font-size: 1.4rem;    /* un toque más compacto */
 }
 
-.diputado-card img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 50%;
-    margin-bottom: 10px;
-    border: 2px solid #800000; /* Guinda */
+.olvido {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #800000;
+  text-align: center;
 }
 
-/* ✨ Animación cute */
-@keyframes aparecer {
-    0% {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+.olvido a {
+  color: #a00000;
+  text-decoration: underline;
+  font-weight: bold;
 }
-
-/* Botones dentro de cada diputado */
-.diputado-card button {
-    margin: 4px;
-    padding: 6px 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: #800000;
-    color: white;
-    font-size: 0.85rem;
-    cursor: pointer;
-}
-
-.diputado-card button:hover {
-    background-color: #a00000;
-    
-}
-
-/* 💼 Estilo para las tarjetas de resultados */
-.resultado-card {
-    background: white;
-    color: black;
-    padding: 15px;
-    margin: 15px;
-    border-radius: 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    width: 250px;
-    text-align: left;
-    font-size: 0.95rem;
-    animation: slideUp 0.5s ease forwards;
-    opacity: 0;
-    transition: transform 0.3s ease;
-}
-
-.resultado-card:hover {
-    transform: translateY(-5px);
-}
-
-/* ✨ Animación de entrada para resultados */
-@keyframes slideUp {
-    0% {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* 🎯 Contenedor general de los resultados */
-#resultados-content {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 30px;
-}
-
-/* ✨ Transiciones suaves para todo */
-* {
-    transition: all 0.3s ease-in-out;
-  }
-  
-  /* 🎬 Animación al cargar la página */
-  body {
-    opacity: 0;
-    animation: fadeIn 0.7s ease forwards;
-  }
-  
-  /* 💨 Keyframes para efecto fade-in */
-  @keyframes fadeIn {
-    to {
-      opacity: 1;
-    }
-  }
-  
-  .pantalla-bienvenida {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #800000;
-    color: white;
-    padding: 2rem;
-  }
-  
-  .pantalla-bienvenida h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .pantalla-bienvenida button {
-    background-color: #ffcc00;
-    color: black;
-    padding: 12px 24px;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  
-  .pantalla-bienvenida button:hover {
-    background-color: #ffaa00;
-  }
-  
-  /* 🌑 Modo oscuro */
-body.modo-oscuro {
-    background-color: #121212;
-    color: white;
-  }
-  
-  body.modo-oscuro .diputado-card,
-  body.modo-oscuro .resultado-card,
-  body.modo-oscuro .card {
-    background-color: #1e1e1e;
-    color: white;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
-  }
-  
-  body.modo-oscuro button {
-    background-color: #333;
-    color: white;
-  }
-  
-  body.modo-oscuro button:hover {
-    background-color: #555;
-  }
-  
-  body.modo-oscuro input {
-    background-color: #222;
-    color: white;
-    border: 1px solid #444;
-  }
-
-  .pantalla-bienvenida {
-    animation: fadeInScale 0.8s ease forwards;
-    opacity: 0;
-  }
-  
-  @keyframes fadeInScale {
-    0% {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
