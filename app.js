@@ -706,6 +706,200 @@ function hookSearchShortcuts() {
   };
 }
 
+// ========= SESIÓN: PDF (versión formal con tablas + resumen global) =========
+async function exportSesionPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  // Helpers locales para no chocar con otros
+  const pdfSafe = (s) =>
+    (s || '')
+      .normalize('NFC')
+      .replace(/\u200B/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const humanizar = (s) => {
+    const stop = new Set(['de','del','la','las','el','los','y','o','u','a','en','por','para','con','sin','al']);
+    return (s || '')
+      .toLowerCase()
+      .replace(/\s+/g,' ')
+      .trim()
+      .split(' ')
+      .map((w,i) => stop.has(w) && i!==0 ? w : w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
+  // Encabezado
+  doc.setFont('helvetica','bold').setFontSize(18)
+     .text('Informe Completo de Sesión', pw/2, 40, { align:'center' });
+
+  // Sesión (nombre bonito, máx 2 líneas)
+  const sesionBruta =
+    document.getElementById('previewSesion')?.innerText?.replace(/^Sesión:\s*/i,'') ||
+    sessionStorage.getItem('sesion_nombre_original') ||
+    sessionStorage.getItem('nombre_sesion') ||
+    'Sesión';
+
+  const sesionBonita = humanizar(pdfSafe(sesionBruta));
+  doc.setFont('helvetica','bold').setFontSize(12).text('Sesión:', 40, 70);
+
+  const maxW = pw - 120;
+  let fontSize = 12;
+  doc.setFont('helvetica','normal').setFontSize(fontSize);
+  let sesLines = doc.splitTextToSize(sesionBonita, maxW);
+  while (sesLines.length > 2 && fontSize > 9) {
+    fontSize--;
+    doc.setFontSize(fontSize);
+    sesLines = doc.splitTextToSize(sesionBonita, maxW);
+  }
+  doc.text(sesLines, 100, 70);
+
+  // Traer asuntos + votos por lote
+  const sid = sessionStorage.getItem('sesion_id');
+  if (!sid) {
+    alert('No hay sesión activa.');
+    return;
+  }
+  const asuntos = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`).then(r => r.json());
+
+  // Contador de votos
+  const contar = (votos) => {
+    const c = { favor:0, contra:0, abst:0, ausente:0 };
+    for (const v of votos) {
+      const t = (v.voto || '').toLowerCase();
+      if (t.includes('favor')) c.favor++;
+      else if (t.includes('contra')) c.contra++;
+      else if (t.includes('absten')) c.abst++;
+      else if (t.includes('ausent')) c.ausente++;
+    }
+    return c;
+  };
+
+  // Procesar en lotes para no saturar
+  const MAX = 6;
+  const lotes = [];
+  for (let i = 0; i < asuntos.length; i += MAX) lotes.push(asuntos.slice(i, i + MAX));
+
+  let y = 100;
+  const totales = { favor:0, contra:0, abst:0, ausente:0 };
+
+  for (const lote of lotes) {
+    const prom = lote.map(a =>
+      fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`)
+        .then(r => r.json())
+        .then(votos => ({ a, votos }))
+        .catch(() => ({ a, votos: [] }))
+    );
+    const resultados = await Promise.all(prom);
+
+    for (const { a, votos } of resultados) {
+      const idx = asuntos.findIndex(x => x.id === a.id);
+      const rom = toRoman(idx + 1);
+
+      if (y > ph - 250) { doc.addPage(); y = 60; }
+
+      // Título del asunto (máx 4 líneas, reduce tamaño si es largo)
+      doc.setFont('helvetica','bold').setFontSize(12).text(`Asunto ${rom}:`, 40, y);
+      y += 18;
+
+      let asuntoFont = 11;
+      doc.setFont('helvetica','normal').setFontSize(asuntoFont);
+      let asuntoLines = doc.splitTextToSize(a.asunto || '', pw - 80);
+      while (asuntoLines.length > 4 && asuntoFont > 8) {
+        asuntoFont--;
+        doc.setFontSize(asuntoFont);
+        asuntoLines = doc.splitTextToSize(a.asunto || '', pw - 80);
+      }
+      asuntoLines.forEach(line => { doc.text(line, 40, y); y += 15; });
+
+      // Resumen local
+      const c = contar(votos);
+      totales.favor   += c.favor;
+      totales.contra  += c.contra;
+      totales.abst    += c.abst;
+      totales.ausente += c.ausente;
+
+      doc.setFont('helvetica','bold').setFontSize(11)
+         .text(
+           `A favor: ${c.favor}   En contra: ${c.contra}   Abstenciones: ${c.abst}   Ausente: ${c.ausente}`,
+           40, y + 6
+         );
+
+      // Tabla detalle
+      doc.autoTable({
+        startY: y + 18,
+        head: [['Diputado', 'Voto']],
+        body: votos.map(v => [v.nombre, v.voto]),
+        margin: { left: 40, right: 40 },
+        headStyles: { fillColor: [128, 0, 0], textColor: [255, 255, 255] },
+        styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        columnStyles: { 0: { cellWidth: 300 }, 1: { cellWidth: 150, halign: 'center' } }
+      });
+
+      y = doc.lastAutoTable.finalY + 24;
+    }
+
+    // dejar al navegador pintar si esto corre en UI
+    await new Promise(r => requestAnimationFrame(r));
+  }
+
+  // Resumen global de la sesión
+  if (y > ph - 80) { doc.addPage(); y = 60; }
+  doc.setFont('helvetica','bold').setFontSize(13)
+     .text('Resumen global de la sesión', 40, y);
+  y += 18;
+
+  doc.setFont('helvetica','normal').setFontSize(12)
+     .text(
+       `A favor: ${totales.favor}   En contra: ${totales.contra}   Abstenciones: ${totales.abst}   Ausente: ${totales.ausente}`,
+       40, y
+     );
+
+  doc.save('resumen_sesion_formal.pdf');
+}
+
+// ========= SESIÓN: Excel (usa window._sesionRows si ya existe; si no, los arma) =========
+async function exportSesionXLS() {
+  // Si ya se generó con mostrarResumenSesion(), úsalo
+  if (Array.isArray(window._sesionRows) && window._sesionRows.length > 1) {
+    const ws = XLSX.utils.aoa_to_sheet(window._sesionRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sesión');
+    XLSX.writeFile(wb, 'resumen_sesion.xlsx');
+    return;
+  }
+
+  // Si no, lo calculamos aquí
+  const sid = sessionStorage.getItem('sesion_id');
+  if (!sid) {
+    alert('No hay sesión activa.');
+    return;
+  }
+  const asuntos = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`).then(r => r.json());
+
+  const header = ['Asunto','Diputado','Voto'];
+  const rows = [header];
+
+  for (let i = 0; i < asuntos.length; i++) {
+    const a = asuntos[i];
+    const rom = toRoman(i + 1);
+    const dets = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`).then(r => r.json());
+    if (dets.length) {
+      dets.forEach(v => rows.push([`Asunto ${rom}: ${a.asunto}`, v.nombre, v.voto]));
+    } else {
+      rows.push([`Asunto ${rom}: ${a.asunto}`, '(sin votos)', '—']);
+    }
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sesión');
+  XLSX.writeFile(wb, 'resumen_sesion.xlsx');
+}
+
 function debounce(fn, ms = 80) {
   let t; 
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
@@ -734,3 +928,6 @@ window.cargarSesionesPasadas = cargarSesionesPasadas;
 window.verDetallesSesion    = verDetallesSesion;
 window.editarVoto           = editarVoto;
 window.showSection          = showSection;
+window.avanzarAlSiguienteAsunto = avanzarAlSiguienteAsunto;
+window.exportSesionPDF = exportSesionPDF;
+window.exportSesionXLS = exportSesionXLS;
