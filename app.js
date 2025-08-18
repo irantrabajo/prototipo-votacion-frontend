@@ -961,110 +961,115 @@ async function exportAsuntoPDF() {
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
 
-  const pdfSafe = (s) =>
-    (s || '')
-      .normalize('NFC')
-      .replace(/\u200B/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-  // Datos base
-  const sid   = sessionStorage.getItem('sesion_id');
-  const aid   = sessionStorage.getItem('asunto_id');
-  const nameS = document.getElementById('fileOrden')?.files[0]?.name
-             || sessionStorage.getItem('sesion_nombre_original')
-             || sessionStorage.getItem('nombre_sesion')
-             || 'Sesión';
-  const nameA = sessionStorage.getItem('nombre_asunto') || 'Asunto sin título';
-  const index = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
-  const toRoman = (num) => {
-    const map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
-    let res = '', n = num;
-    for (const [v,s] of map) while (n >= v) { res += s; n -= v; }
-    return res;
-  };
-  const roman = toRoman(index + 1);
+  // Datos básicos
+  const sid = sessionStorage.getItem('sesion_id');
+  const aid = sessionStorage.getItem('asunto_id');
+  const asuntoNombre = sessionStorage.getItem('nombre_asunto') || 'Asunto';
 
   if (!sid || !aid) {
-    alert('❌ No hay sesión o asunto activo.');
+    alert('No hay sesión o asunto activo.');
     return;
   }
 
-  // Encabezado
+  // Título
   doc.setFont('helvetica','bold').setFontSize(18)
-     .text('Informe Detallado de Votación por Asunto', pw/2, 40, { align:'center' });
+     .text('Informe de Asunto', pw/2, 40, { align: 'center' });
 
-  // SECCIÓN: Sesión
+  // Sesión (2 líneas máx)
+  const sesionBruta =
+    document.getElementById('previewSesion')?.innerText?.replace(/^Sesión:\s*/i,'') ||
+    sessionStorage.getItem('sesion_nombre_original') ||
+    sessionStorage.getItem('nombre_sesion') || 'Sesión';
+
   doc.setFont('helvetica','bold').setFontSize(12).text('Sesión:', 40, 70);
-  let fs = 12, maxW = pw - 120;
-  doc.setFont('helvetica','normal').setFontSize(fs);
-  let sesLines = doc.splitTextToSize(pdfSafe(nameS), maxW);
-  while (sesLines.length > 2 && fs > 9) {
-    fs--; doc.setFontSize(fs);
-    sesLines = doc.splitTextToSize(pdfSafe(nameS), maxW);
+  let { nextY } = fitTextBlock(doc, sesionBruta, 100, 70, pw - 140, {
+    startSize: 12, minSize: 8, maxLines: 2, lineGap: 2, font: ['helvetica','normal']
+  });
+  let y = Math.max(95, nextY + 6);
+
+  // Asunto (hasta 4 líneas)
+  doc.setFont('helvetica','bold').setFontSize(12).text('Asunto:', 40, y);
+  ({ nextY } = fitTextBlock(doc, asuntoNombre, 100, y, pw - 140, {
+    startSize: 12, minSize: 9, maxLines: 4, lineGap: 2, font: ['helvetica','normal']
+  }));
+  y = nextY + 10;
+
+  // Votos del asunto
+  const votos = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`).then(r => r.json()).catch(()=>[]);
+  const cont = { favor:0, contra:0, abst:0, ausente:0 };
+  for (const v of votos) {
+    const t = (v.voto || '').toLowerCase();
+    if (t.includes('favor')) cont.favor++;
+    else if (t.includes('contra')) cont.contra++;
+    else if (t.includes('absten')) cont.abst++;
+    else if (t.includes('ausent')) cont.ausente++;
   }
-  doc.text(sesLines, 100, 70);
 
-  // SECCIÓN: Asunto
-  let y = 90 + sesLines.length * 18;
-  doc.setFont('helvetica','bold').setFontSize(12).text(`Asunto ${roman}:`, 40, y);
-  fs = 12; doc.setFont('helvetica','normal').setFontSize(fs);
-  let asuntoLines = doc.splitTextToSize(pdfSafe(nameA), maxW);
-  while (asuntoLines.length > 4 && fs > 9) {
-    fs--; doc.setFontSize(fs);
-    asuntoLines = doc.splitTextToSize(pdfSafe(nameA), maxW);
-  }
-  doc.text(asuntoLines, 120, y);
-  y += asuntoLines.length * 18 + 10;
+  // Resumen numérico
+  doc.setFont('helvetica','bold').setFontSize(11)
+     .text(`A favor: ${cont.favor}   En contra: ${cont.contra}   Abstenciones: ${cont.abst}   Ausente: ${cont.ausente}`, 40, y);
+  y += 16;
 
-  // Datos de votos
-  const res = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`);
-  const detalles = await res.json();
-  const resumen = [
-    ['Diputado', 'Voto'],
-    ...detalles.map(v => [v.nombre, v.voto])
-  ];
-
-  // Tabla
+  // Tabla detalle
   doc.autoTable({
     startY: y,
-    head: [resumen[0]],
-    body: resumen.slice(1),
+    head: [['Diputado', 'Voto']],
+    body: votos.map(v => [v.nombre, v.voto]),
     margin: { left: 40, right: 40 },
     headStyles: { fillColor: [128, 0, 0], textColor: [255, 255, 255] },
-    styles: { fontSize: 10, overflow: 'linebreak', cellPadding: 4 },
-    columnStyles: { 0: { cellWidth: 300 }, 1: { cellWidth: 150, halign: 'center' } }
+    styles: { fontSize: 10, cellPadding: 4, overflow: 'linebreak' },
+    columnStyles: { 0: { cellWidth: 320 }, 1: { cellWidth: 160, halign: 'center' } }
   });
 
-  // Gráfica (si existe)
-  let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 20 : y + 20;
-  const canvas = document.getElementById('chartResumen');
-  if (canvas && canvas.chart) {
-    // Para que se vea nítida
-    const scale = 2;
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width * scale;
-    tempCanvas.height = canvas.height * scale;
-    const ctx = tempCanvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(canvas, 0, 0);
+  y = doc.lastAutoTable.finalY + 18;
+  if (y > ph - 260) { doc.addPage(); y = 60; }
 
-    const img = tempCanvas.toDataURL('image/png');
-    const w = pw - 80;
-    const h = (canvas.height / canvas.width) * w;
+  // --- Gráfica (Chart.js) con fuentes grandes ---
+  // Canvas offscreen "grande" para que se vea nítida
+  const canvas = document.createElement('canvas');
+  canvas.width = 900;   // más grande = mejor resolución
+  canvas.height = 350;
 
-    if (finalY + h + 40 > ph) {
-      doc.addPage();
-      finalY = 40;
+  const ctx = canvas.getContext('2d');
+
+  // Aumentamos tamaños de fuente de ejes/leyenda
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['A favor', 'En contra', 'Abstenciones', 'Ausente'],
+      datasets: [{
+        label: 'Votos',
+        data: [cont.favor, cont.contra, cont.abst, cont.ausente],
+        backgroundColor: 'rgba(128,0,0,0.8)'
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { font: { size: 16 } } },
+        title: { display: true, text: 'Gráfica de Resultados', font: { size: 18 } }
+      },
+      scales: {
+        x: { ticks: { font: { size: 14 } } },
+        y: { ticks: { font: { size: 14 } }, beginAtZero: true }
+      }
     }
+  });
 
-    doc.setFont('helvetica','bold').setFontSize(12)
-       .text('Gráfica de Resultados:', 40, finalY - 6);
-    doc.addImage(img, 'PNG', 40, finalY, w, h);
-  }
+  // Esperar a que Chart pinte (un frame)
+  await new Promise(r => requestAnimationFrame(r));
+  const img = canvas.toDataURL('image/png');
+  chart.destroy();
 
-  doc.save('resumen_asunto_formal.pdf');
+  // Insertar imagen ocupando el ancho útil
+  const imgW = pw - 80;
+  const imgH = (imgW / canvas.width) * canvas.height;
+  doc.addImage(img, 'PNG', 40, y, imgW, imgH);
+
+  doc.save('asunto.pdf');
 }
+
 
 // ========= ASUNTO: Excel =========
 async function exportAsuntoXLS() {
@@ -1111,6 +1116,34 @@ async function exportAsuntoXLS() {
   XLSX.writeFile(wb, `resumen_${safeName}.xlsx`);
 }
 
+// Encoge la fuente y parte en líneas hasta que quepa
+function fitTextBlock(doc, raw, x, y, maxWidth, {
+  startSize = 12,
+  minSize = 8,
+  maxLines = 3,
+  lineGap = 4,
+  font = ['helvetica','normal']
+} = {}) {
+  const clean = String(raw || '')
+    .normalize('NFC')
+    .replace(/\u200B/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  let size = startSize;
+  doc.setFont(font[0], font[1]).setFontSize(size);
+  let lines = doc.splitTextToSize(clean, maxWidth);
+
+  while (lines.length > maxLines && size > minSize) {
+    size -= 1;
+    doc.setFontSize(size);
+    lines = doc.splitTextToSize(clean, maxWidth);
+  }
+
+  doc.text(lines, x, y);
+  const usedHeight = lines.length * (size * 1.2) + (lines.length - 1) * lineGap;
+  return { nextY: y + usedHeight, fontSize: size, lines };
+}
 
 // Exponer funciones al DOM
 window.uploadOrden        = uploadOrden;
