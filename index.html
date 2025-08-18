@@ -31,7 +31,7 @@
           <span>Sistema de Votación Parlamentaria</span>
         </h1>
         <h2>🔐 Iniciar Sesión</h2>
-        <form id="loginForm">
+        <form id="loginForm" onsubmit="event.preventDefault(); login();">
           <label for="usuarioLogin">Usuario</label>
           <input type="text" id="usuarioLogin" required />
           <label for="passwordLogin">Contraseña</label>
@@ -109,13 +109,15 @@
         type="search"
         id="buscadorDiputado"
         placeholder="Buscar diputado por nombre..."
+        oninput="filtrarDiputados()"        <!-- <- agrega esto -->
         enterkeyhint="search"
         inputmode="search"
         style="margin-bottom:1rem; padding:0.5rem; width:100%; max-width:400px; border:2px solid #800000; border-radius:8px;"
     />
 
 
-      <div id="diputados-container"></div>
+
+    <div id="diputados-container"></div>
     </section>
 
     <!-- 5) Resultados por Asunto -->
