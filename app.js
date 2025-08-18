@@ -900,6 +900,48 @@ async function exportSesionXLS() {
   XLSX.writeFile(wb, 'resumen_sesion.xlsx');
 }
 
+async function exportAsuntoTXT() {
+  const sid = sessionStorage.getItem(K_SID);
+  const aid = sessionStorage.getItem(K_AID);
+  const nameA = sessionStorage.getItem(K_ANAME) || "Asunto sin título";
+
+  if (!sid || !aid) {
+    alert("❌ No hay sesión o asunto activo.");
+    return;
+  }
+
+  // Traer los votos de este asunto
+  const res = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`);
+  const votos = await res.json();
+
+  let texto = `Resumen de Votación — ${nameA}\n\n`;
+
+  const conteo = { 'A favor': 0, 'En contra': 0, 'Abstención': 0, 'Ausente': 0 };
+  votos.forEach(v => {
+    const t = normalizarVoto(v.voto);
+    if (conteo[t] !== undefined) conteo[t]++;
+  });
+
+  texto += `A favor: ${conteo['A favor']}\n`;
+  texto += `En contra: ${conteo['En contra']}\n`;
+  texto += `Abstenciones: ${conteo['Abstención']}\n`;
+  texto += `Ausentes: ${conteo['Ausente']}\n\n`;
+
+  texto += `--- Detalle de votos ---\n`;
+  votos.forEach(v => { texto += `${v.nombre}: ${v.voto}\n`; });
+
+  // Descargar TXT
+  const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `resumen_asunto.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function debounce(fn, ms = 80) {
   let t; 
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
@@ -911,6 +953,164 @@ function terminarSesion() {
   sessionStorage.clear();
   location.reload();
 }
+
+// ========= ASUNTO: PDF (encabezado + tabla + gráfica si existe) =========
+async function exportAsuntoPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  const pdfSafe = (s) =>
+    (s || '')
+      .normalize('NFC')
+      .replace(/\u200B/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  // Datos base
+  const sid   = sessionStorage.getItem('sesion_id');
+  const aid   = sessionStorage.getItem('asunto_id');
+  const nameS = document.getElementById('fileOrden')?.files[0]?.name
+             || sessionStorage.getItem('sesion_nombre_original')
+             || sessionStorage.getItem('nombre_sesion')
+             || 'Sesión';
+  const nameA = sessionStorage.getItem('nombre_asunto') || 'Asunto sin título';
+  const index = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
+  const toRoman = (num) => {
+    const map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+    let res = '', n = num;
+    for (const [v,s] of map) while (n >= v) { res += s; n -= v; }
+    return res;
+  };
+  const roman = toRoman(index + 1);
+
+  if (!sid || !aid) {
+    alert('❌ No hay sesión o asunto activo.');
+    return;
+  }
+
+  // Encabezado
+  doc.setFont('helvetica','bold').setFontSize(18)
+     .text('Informe Detallado de Votación por Asunto', pw/2, 40, { align:'center' });
+
+  // SECCIÓN: Sesión
+  doc.setFont('helvetica','bold').setFontSize(12).text('Sesión:', 40, 70);
+  let fs = 12, maxW = pw - 120;
+  doc.setFont('helvetica','normal').setFontSize(fs);
+  let sesLines = doc.splitTextToSize(pdfSafe(nameS), maxW);
+  while (sesLines.length > 2 && fs > 9) {
+    fs--; doc.setFontSize(fs);
+    sesLines = doc.splitTextToSize(pdfSafe(nameS), maxW);
+  }
+  doc.text(sesLines, 100, 70);
+
+  // SECCIÓN: Asunto
+  let y = 90 + sesLines.length * 18;
+  doc.setFont('helvetica','bold').setFontSize(12).text(`Asunto ${roman}:`, 40, y);
+  fs = 12; doc.setFont('helvetica','normal').setFontSize(fs);
+  let asuntoLines = doc.splitTextToSize(pdfSafe(nameA), maxW);
+  while (asuntoLines.length > 4 && fs > 9) {
+    fs--; doc.setFontSize(fs);
+    asuntoLines = doc.splitTextToSize(pdfSafe(nameA), maxW);
+  }
+  doc.text(asuntoLines, 120, y);
+  y += asuntoLines.length * 18 + 10;
+
+  // Datos de votos
+  const res = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`);
+  const detalles = await res.json();
+  const resumen = [
+    ['Diputado', 'Voto'],
+    ...detalles.map(v => [v.nombre, v.voto])
+  ];
+
+  // Tabla
+  doc.autoTable({
+    startY: y,
+    head: [resumen[0]],
+    body: resumen.slice(1),
+    margin: { left: 40, right: 40 },
+    headStyles: { fillColor: [128, 0, 0], textColor: [255, 255, 255] },
+    styles: { fontSize: 10, overflow: 'linebreak', cellPadding: 4 },
+    columnStyles: { 0: { cellWidth: 300 }, 1: { cellWidth: 150, halign: 'center' } }
+  });
+
+  // Gráfica (si existe)
+  let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 20 : y + 20;
+  const canvas = document.getElementById('chartResumen');
+  if (canvas && canvas.chart) {
+    // Para que se vea nítida
+    const scale = 2;
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width * scale;
+    tempCanvas.height = canvas.height * scale;
+    const ctx = tempCanvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(canvas, 0, 0);
+
+    const img = tempCanvas.toDataURL('image/png');
+    const w = pw - 80;
+    const h = (canvas.height / canvas.width) * w;
+
+    if (finalY + h + 40 > ph) {
+      doc.addPage();
+      finalY = 40;
+    }
+
+    doc.setFont('helvetica','bold').setFontSize(12)
+       .text('Gráfica de Resultados:', 40, finalY - 6);
+    doc.addImage(img, 'PNG', 40, finalY, w, h);
+  }
+
+  doc.save('resumen_asunto_formal.pdf');
+}
+
+// ========= ASUNTO: Excel =========
+async function exportAsuntoXLS() {
+  // 1) Datos base
+  const sid = sessionStorage.getItem('sesion_id');
+  const aid = sessionStorage.getItem('asunto_id');
+  const nameA = sessionStorage.getItem('nombre_asunto') || 'Asunto';
+
+  if (!sid || !aid) {
+    alert('❌ No hay sesión o asunto activo.');
+    return;
+  }
+  if (typeof XLSX === 'undefined') {
+    alert('❌ No se cargó la librería XLSX.');
+    return;
+  }
+
+  // 2) Traer votos del asunto
+  let detalles = [];
+  try {
+    const res = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`);
+    detalles = await res.json();
+  } catch (e) {
+    console.error('Error trayendo votosDetalle:', e);
+    alert('No se pudieron obtener los votos de este asunto.');
+    return;
+  }
+
+  // 3) Armar filas
+  const rows = [['Diputado', 'Voto']];
+  if (Array.isArray(detalles) && detalles.length) {
+    detalles.forEach(v => rows.push([v.nombre, v.voto]));
+  } else {
+    rows.push(['(sin votos registrados)', '—']);
+  }
+
+  // 4) Crear y descargar Excel
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Asunto');
+
+  // Nombre bonito de archivo
+  const safeName = nameA.replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 60).trim() || 'Asunto';
+  XLSX.writeFile(wb, `resumen_${safeName}.xlsx`);
+}
+
 
 // Exponer funciones al DOM
 window.uploadOrden        = uploadOrden;
@@ -931,3 +1131,8 @@ window.showSection          = showSection;
 window.avanzarAlSiguienteAsunto = avanzarAlSiguienteAsunto;
 window.exportSesionPDF = exportSesionPDF;
 window.exportSesionXLS = exportSesionXLS;
+window.exportAsuntoTXT = exportAsuntoTXT;
+window.exportAsuntoPDF = exportAsuntoPDF;
+window.exportAsuntoXLS = exportAsuntoXLS;
+
+
