@@ -11,6 +11,9 @@ const K_ASUNTO_CNT = 'asunto_count';
 // Backend detrás de CloudFront
 const backend = 'https://d32cz7avp3p0jh.cloudfront.net';
 
+
+const VOTADOS = new Set(); // ← aquí, global
+
 let DIPUTADOS_CACHE = null;
 
 function fotoSrc(f) {
@@ -242,9 +245,13 @@ async function confirmarOrden() {
   }
 
   sessionStorage.setItem(K_ASUNTO_CNT, String(asuntos.length));
+  VOTADOS.clear();
+  const busc = document.getElementById('buscadorDiputado');
+if (busc) busc.value = '';
   showSection('diputados');
   cargarDiputados();
 }
+
 
 async function avanzarAlSiguienteAsunto() {
   const asuntos = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
@@ -257,6 +264,9 @@ async function avanzarAlSiguienteAsunto() {
     sessionStorage.setItem('asunto_index', String(index));
     sessionStorage.setItem(K_AID, siguiente.id);
     sessionStorage.setItem(K_ANAME, siguiente.asunto);
+    VOTADOS.clear();
+    const busc = document.getElementById('buscadorDiputado');
+if (busc) busc.value = '';
     showSection('diputados');
     cargarDiputados();
   } else {
@@ -300,10 +310,12 @@ async function guardarAsunto() {
   sessionStorage.setItem(K_ANAME, name);
   const cnt = parseInt(sessionStorage.getItem(K_ASUNTO_CNT) || '0', 10) + 1;
   sessionStorage.setItem(K_ASUNTO_CNT, String(cnt));
+  VOTADOS.clear();  
+  const busc = document.getElementById('buscadorDiputado');
+if (busc) busc.value = '';
   showSection('diputados');
   cargarDiputados();
 }
-
 // —————————————————————————
 // Cargar diputados
 // —————————————————————————
@@ -313,6 +325,10 @@ async function cargarDiputados() {
     DIPUTADOS_CACHE = await res.json();
   }
   let list = [...DIPUTADOS_CACHE];
+
+  // Ocultar los que ya votaron en este asunto
+  list = list.filter(d => !VOTADOS.has(d.id));
+
 
   if (ordenPreferido.length) {
     const pos = new Map(ordenPreferido.map((n, i) => [norm(n), i]));
@@ -381,14 +397,20 @@ async function votar(did, voto) {
       throw new Error(errorText);
     }
 
-    const card = document.getElementById(`dip-${did}`);
-    const botones = card.querySelectorAll('button');
-    botones.forEach(btn => {
-      btn.disabled = true;
-      btn.style.opacity = 0.6;
-      btn.style.cursor = 'not-allowed';
-    });
+    // 1) Marca como votado
+    VOTADOS.add(did);
 
+    // 2) Anima y elimina la tarjeta
+    const card = document.getElementById(`dip-${did}`);
+    if (card) {
+      // (si quieres también puedes desactivar botones antes de ocultar)
+      card.style.transition = 'opacity .18s ease, transform .18s ease';
+      card.style.opacity = '0';
+      card.style.transform = 'scale(.98)';
+      setTimeout(() => card.remove(), 220);
+    }
+
+    // 3) Limpia buscador y regresa el foco
     const buscador = document.getElementById('buscadorDiputado');
     if (buscador) {
       buscador.value = '';
@@ -398,6 +420,8 @@ async function votar(did, voto) {
         try { buscador.setSelectionRange(0, 0); } catch {}
       }, 120);
     }
+
+    // 4) Mantén vista de Diputados arriba
     const secDip = document.getElementById('diputados');
     if (secDip) secDip.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
