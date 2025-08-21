@@ -122,26 +122,43 @@
 
     <!-- 5) Resultados por Asunto -->
     <section id="resultados" class="hidden">
-      <h2>Resumen de Resultados</h2>
-      <div id="resumenSesion"></div>
-      <canvas id="chartResumen" class="hidden"></canvas>
-      <div id="botonSiguienteAsunto" class="hidden botones">
-        <button onclick="avanzarAlSiguienteAsunto()">⏭️ Siguiente Asunto</button>
+      <div class="container-page">
+        <div class="card soft">
+          <h2 class="section-title">Resumen de Resultados</h2>
+    
+          <!-- Aquí inyectamos el título de Sesión/Asunto y los totales -->
+          <div id="resumenSesion"></div>
+    
+          <!-- Gráfica -->
+          <div class="card" style="margin-top:12px;">
+            <canvas id="chartResumen" class="hidden"></canvas>
+          </div>
+    
+          <!-- Acciones del ASUNTO -->
+          <div id="botonSiguienteAsunto" class="hidden actions" style="margin-top:14px;">
+            <button class="full" onclick="avanzarAlSiguienteAsunto()">⏭️ Siguiente Asunto</button>
+          </div>
+    
+          <div class="actions" style="margin-top:6px;">
+            <button onclick="exportAsuntoTXT()">Descargar Asunto (TXT)</button>
+            <button onclick="exportAsuntoPDF()">Descargar Asunto (PDF)</button>
+            <button onclick="exportAsuntoXLS()">Descargar Asunto (Excel)</button>
+          </div>
+    
+          <hr style="border:none; border-top:1px solid #f0dcdc; margin:16px 0;"/>
+    
+          <!-- Acciones de la SESIÓN -->
+          <div class="actions">
+            <button class="full" onclick="mostrarResumenSesion()">Ver Resumen de Sesión</button>
+            <button onclick="exportSesionTXT()">Descargar Sesión (TXT)</button>
+            <button onclick="exportSesionPDF()">Descargar Sesión (PDF)</button>
+            <button onclick="exportSesionXLS()">Descargar Sesión (Excel)</button>
+          </div>
+    
+          <pre id="resumenSesionCompleto" class="hidden"></pre>
+        </div>
       </div>
-      <div class="botones">
-        <button onclick="exportAsuntoTXT()">Descargar Asunto (TXT)</button>
-        <button onclick="exportAsuntoPDF()">Descargar Asunto (PDF)</button>
-        <button onclick="exportAsuntoXLS()">Descargar Asunto (Excel)</button>
-      </div>
-      <hr/>
-      <div class="botones">
-        <button onclick="mostrarResumenSesion()">Ver Resumen de Sesión</button>
-        <button onclick="exportSesionTXT()">Descargar Sesión (TXT)</button>
-        <button onclick="exportSesionPDF()">Descargar Sesión (PDF)</button>
-        <button onclick="exportSesionXLS()">Descargar Sesión (Excel)</button>
-      </div>
-      <pre id="resumenSesionCompleto" class="hidden"></pre>
-    </section>
+    </section>       
 
     <!-- 7) Sesiones pasadas -->
     <section id="sesionesPasadas" class="hidden">

@@ -410,11 +410,17 @@ async function votar(did, voto) {
 // —————————————————————————
 // Resultados + Gráfica
 // —————————————————————————
+// —————————————————————————
+// Resultados + Gráfica (versión “card + stats”)
+// —————————————————————————
 async function cargarResultados() {
   const sid   = sessionStorage.getItem(K_SID);
   const aid   = sessionStorage.getItem(K_AID);
-  const nameS = document.getElementById('fileOrden')?.files[0]?.name || sessionStorage.getItem('sesion_nombre_original') || sessionStorage.getItem(K_SNAME);
-  const nameA = sessionStorage.getItem(K_ANAME);
+  const nameS = document.getElementById('fileOrden')?.files[0]?.name
+             || sessionStorage.getItem('sesion_nombre_original')
+             || sessionStorage.getItem(K_SNAME)
+             || 'Sesión';
+  const nameA = sessionStorage.getItem(K_ANAME) || 'Asunto';
   const index = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
   const roman = toRoman(index + 1);
 
@@ -422,7 +428,7 @@ async function cargarResultados() {
     console.warn("❌ No hay sesión o asunto activo.");
     return;
   }
-  
+
   const res = await fetch(`${backend}/api/resultados?sesion_id=${sid}&asunto_id=${aid}`);
   let data;
   try {
@@ -432,19 +438,36 @@ async function cargarResultados() {
     console.error("❌ Error al cargar resultados:", err);
     return;
   }
-  const [d] = data;
+  const d = data[0] || { a_favor:0, en_contra:0, abstenciones:0, ausente:0 };
 
-  document.getElementById('resumenSesion').innerHTML = `
-    <h3>Sesión: ${nameS}</h3>
-    <h3>Asunto ${roman}: ${nameA}</h3>
-    <p>A favor: ${d.a_favor||0}</p>
-    <p>En contra: ${d.en_contra||0}</p>
-    <p>Abstenciones: ${d.abstenciones||0}</p>
-    <p>Ausente: ${d.ausente||0}</p>`;
+  // Cabeceras y totales con la grilla .card + .stats
+  const cont = document.getElementById('resumenSesion');
+  cont.innerHTML = `
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:6px;">Sesión</div>
+      <div>${nameS}</div>
+    </div>
 
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:6px;">Asunto ${roman}</div>
+      <div>${nameA}</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">${d.a_favor||0}</div><div class="label">A favor</div></div>
+      <div class="stat"><div class="k">${d.en_contra||0}</div><div class="label">En contra</div></div>
+      <div class="stat"><div class="k">${d.abstenciones||0}</div><div class="label">Abstenciones</div></div>
+      <div class="stat"><div class="k">${d.ausente||0}</div><div class="label">Ausente</div></div>
+    </div>
+  `;
+
+  // Gráfica dentro de su card (el canvas ya existe en el HTML)
   const cnv = document.getElementById('chartResumen');
   if (cnv.chart) cnv.chart.destroy();
   cnv.classList.remove('hidden');
+  // tamaño cómodo en móvil; Chart respeta el contenedor
+  cnv.style.minHeight = '220px';
+
   cnv.chart = new Chart(cnv, {
     type: 'bar',
     data: {
@@ -452,12 +475,24 @@ async function cargarResultados() {
       datasets: [{
         label: 'Votos',
         data: [d.a_favor, d.en_contra, d.abstenciones, d.ausente],
-        backgroundColor: 'rgba(128,0,0,0.7)'
+        backgroundColor: 'rgba(128,0,0,0.8)'
       }]
     },
-    options: { scales: { y: { beginAtZero: true } } }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { font: { size: 14 } } },
+        title: { display: false }
+      },
+      scales: {
+        x: { ticks: { font: { size: 12 } } },
+        y: { beginAtZero: true, ticks: { font: { size: 12 } } }
+      }
+    }
   });
 
+  // Mostrar/ocultar botones Siguiente/Terminar
   const btn = document.getElementById('botonSiguienteAsunto');
   btn.classList.add('hidden');
   const btnFin = document.getElementById('botonTerminarSesion');
@@ -1055,12 +1090,14 @@ async function exportAsuntoPDF() {
         y: { ticks: { font: { size: 14 } }, beginAtZero: true }
       }
     }
+    
   });
 
   // Esperar a que Chart pinte (un frame)
   await new Promise(r => requestAnimationFrame(r));
   const img = canvas.toDataURL('image/png');
   chart.destroy();
+  
 
   // Insertar imagen ocupando el ancho útil
   const imgW = pw - 80;
@@ -1068,6 +1105,66 @@ async function exportAsuntoPDF() {
   doc.addImage(img, 'PNG', 40, y, imgW, imgH);
 
   doc.save('asunto.pdf');
+}
+
+// Normaliza/contabiliza votos para gráficas
+function _normVoto(v) {
+  const s = (v || '').toLowerCase();
+  if (s.includes('favor')) return 'favor';
+  if (s.includes('contra')) return 'contra';
+  if (s.includes('absten')) return 'abstenciones';
+  if (s.includes('ausent')) return 'ausente';
+  return 'otros';
+}
+function contarVotosArray(votos) {
+  const c = { favor: 0, contra: 0, abstenciones: 0, ausente: 0 };
+  for (const v of votos || []) {
+    const t = _normVoto(v.voto);
+    if (t in c) c[t]++;
+  }
+  return c;
+}
+
+// Renderiza una gráfica off‑DOM y devuelve su dataURL (PNG)
+async function chartImage(valores, etiquetas = ['A favor','En contra','Abstenciones','Ausente']) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 900;         // ancho grande → se ve nítido en PDF
+  canvas.height = 390;        // alto mayor para etiquetas legibles
+  const ctx = canvas.getContext('2d');
+
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: etiquetas,
+      datasets: [{
+        label: 'Votos',
+        data: valores.map(v => Number(v) || 0),
+        backgroundColor: 'rgba(128,0,0,0.8)'
+      }]
+    },
+    options: {
+      responsive: false,
+      animation: false, // sin animación → se “congela” de inmediato para el toDataURL
+      scales: {
+        x: { ticks: { font: { size: 18 } } },  // etiquetas más grandes
+        y: { beginAtZero: true, ticks: { font: { size: 16 } } }
+      },
+      plugins: {
+        legend: { labels: { font: { size: 16 } } },
+        title: {
+          display: true,
+          text: 'Gráfica de Resultados',
+          font: { size: 20, weight: 'bold' }
+        }
+      }
+    }
+  });
+
+  // Asegura que el siguiente frame ya tenga la barra dibujada
+  await new Promise(r => requestAnimationFrame(r));
+  const png = canvas.toDataURL('image/png');
+  chart.destroy(); // limpia
+  return png;
 }
 
 
