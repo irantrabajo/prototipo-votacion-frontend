@@ -106,14 +106,18 @@
     <section id="diputados" class="hidden">
       <h2>Vota por cada diputado:</h2>
       <input
-        type="search"
-        id="buscadorDiputado"
-        placeholder="Buscar diputado por nombre..."
-        oninput="filtrarDiputados()"   
-        enterkeyhint="search"
-        inputmode="search"
-        style="margin-bottom:1rem; padding:0.5rem; width:100%; max-width:400px; border:2px solid #800000; border-radius:8px;"
+      type="search"
+      id="buscadorDiputado"
+      placeholder="Buscar diputado por nombre..."
+      oninput="filtrarDiputados()"
+      enterkeyhint="search"
+      inputmode="search"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      style="margin-bottom:1rem; padding:0.5rem; width:100%; max-width:400px; border:2px solid #800000; border-radius:8px;"
     />
+    
 
 
 
@@ -146,14 +150,15 @@
           </div>
     
           <hr style="border:none; border-top:1px solid #f0dcdc; margin:16px 0;"/>
-    
           <!-- Acciones de la SESIÓN -->
-          <div class="actions">
+  +       <div id="accionesSesion" class="actions hidden">
             <button class="full" onclick="mostrarResumenSesion()">Ver Resumen de Sesión</button>
             <button onclick="exportSesionTXT()">Descargar Sesión (TXT)</button>
             <button onclick="exportSesionPDF()">Descargar Sesión (PDF)</button>
             <button onclick="exportSesionXLS()">Descargar Sesión (Excel)</button>
-          </div>
+      </div>
+  
+  
     
           <pre id="resumenSesionCompleto" class="hidden"></pre>
         </div>

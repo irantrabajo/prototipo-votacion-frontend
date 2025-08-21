@@ -525,6 +525,11 @@ async function cargarResultados() {
   const total = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]').length;
   if (index + 1 < total) btn.classList.remove('hidden');
   else btnFin.classList.remove('hidden');
+
+  // 👉 SOLO mostrar las acciones de la **sesión** en el ÚLTIMO asunto
+  const accionesSesion = document.getElementById('accionesSesion');
+  if (accionesSesion) accionesSesion.classList.toggle('hidden', index + 1 < total);
+
 }
 
 // —————————————————————————

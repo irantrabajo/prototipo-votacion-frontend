@@ -584,13 +584,13 @@ body {
 .diputado-card:hover{ transform: translateY(-3px); }
 
 /* ==== FOTO: opción cuadrada (simétrica) ==== */
-.diputado-card img{
+/*.diputado-card img{
   width:100% !important;
   height:auto;
   aspect-ratio:1 / 1;    /* cuadrada perfecta */
-  object-fit:cover;
+ /* object-fit:cover;
   border-radius:12px;    /* redondeada suave */
-  margin:0 0 .75rem 0;
+ /* margin:0 0 .75rem 0;
   border:2px solid #800000;
 }
 
@@ -647,4 +647,38 @@ body {
   .diputado-card{ border-radius:12px; padding:12px; }
   .diputado-card .acciones{ grid-template-columns:1fr 1fr 1fr; }
   .diputado-card .acciones button{ padding:9px 6px; font-size:12px; }
+}
+
+/* --- FORZAR AVATAR CIRCULAR --- */
+.diputado-card img {
+  width: 120px !important;
+  height: 120px !important;
+  border-radius: 9999px !important; /* círculo */
+  object-fit: cover !important;
+  aspect-ratio: auto !important;     /* anula el cuadrado */
+  margin: 0 auto .75rem !important;
+}
+
+#buscadorDiputado {
+  font-size: 16px;   /* evita auto‑zoom en iOS/Android */
+  line-height: 1.2;
+}
+/* Layout simétrico de cabeceras y stats en Resultados */
+#resumenSesion{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+#resumenSesion .card{
+  height: 100%;
+  text-align: left;
+}
+#resumenSesion .stats{
+  grid-column: 1 / -1;  /* que la rejilla de totales vaya a lo ancho */
+}
+
+/* Responsive: 1 columna en móvil */
+@media (max-width: 768px){
+  #resumenSesion{ grid-template-columns: 1fr; }
 }
