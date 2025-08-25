@@ -542,6 +542,26 @@ body {
   margin-top:14px;
 }
 .actions .full{ grid-column:1 / -1; }
+/* Acomodo parejo de los botones en las rejillas de acciones */
+.actions{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-items: stretch;   /* todas las celdas misma altura */
+}
+.actions .full{ grid-column: 1 / -1; }
+
+/* Anula el margen global dentro de .actions y asegura ancho completo */
+.actions button{
+  margin: 0 !important;  /* ← evita el desorden por .5rem global */
+  width: 100%;
+}
+
+/* En móvil: una sola columna */
+@media (max-width: 768px){
+  .actions{ grid-template-columns: 1fr; }
+}
+
 
 /* Botones más compactos (sin romper escritorio) */
 @media (max-width:768px){
@@ -618,35 +638,27 @@ body {
   color:#555;
   font-size:13px;
 }
-
-/* Botonera pegada abajo y simétrica (3 columnas) */
+/* Botonera del diputado: en columna, pegada abajo */
 .diputado-card .acciones{
-  margin-top:auto; /* empuja la botonera al fondo de la card */
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:8px;
+  margin-top: auto;          /* baja la botonera al fondo de la card */
+  display: flex;
+  flex-direction: column;    /* ← columna */
+  gap: 8px;
 }
 .diputado-card .acciones button{
-  margin:0;                 /* ya hay gap */
-  padding:10px 8px;
-  border-radius:10px;
-  border:none;
-  background:#800000;
-  color:#fff;
-  font-size:13px;
-  cursor:pointer;
-  transition:filter .15s ease;
+  margin: 0;                 /* anula el margen global del botón */
+  width: 100%;               /* ancho parejo */
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: none;
+  background: #800000;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: filter .15s ease;
 }
 .diputado-card .acciones button:hover{
-  filter:brightness(1.05);
-}
-
-/* Responsive fino */
-@media (max-width:768px){
-  #diputados-container{ gap:12px; }
-  .diputado-card{ border-radius:12px; padding:12px; }
-  .diputado-card .acciones{ grid-template-columns:1fr 1fr 1fr; }
-  .diputado-card .acciones button{ padding:9px 6px; font-size:12px; }
+  filter: brightness(1.05);
 }
 
 /* --- FORZAR AVATAR CIRCULAR --- */
@@ -681,4 +693,60 @@ body {
 /* Responsive: 1 columna en móvil */
 @media (max-width: 768px){
   #resumenSesion{ grid-template-columns: 1fr; }
+}
+
+/* 1) Acciones (Asunto/Sesión) más compactas en móvil/tablet */
+@media (max-width: 900px){
+  .actions{
+    grid-template-columns: 1fr 1fr;    /* 2 columnas parejas */
+    gap: 10px;
+  }
+  .actions button{
+    margin: 0 !important;              /* evita desalinear por margin global */
+    width: 100%;
+    padding: 0.65rem 0.6rem;           /* más compacto */
+    font-size: 0.92rem;                 /* texto un poco menor */
+    border-radius: 8px;
+  }
+
+  /* Botones principales: Siguiente/Terminar (ligeramente más grandes) */
+  #botonSiguienteAsunto button,
+  #botonTerminarSesion button{
+    padding: 0.8rem 0.6rem;
+    font-size: 1rem;
+    border-radius: 10px;
+  }
+}
+
+/* 2) En móvil muy chico: una sola columna y aún más compacto */
+@media (max-width: 600px){
+  .actions{ grid-template-columns: 1fr; }
+  .actions button{
+    padding: 0.6rem 0.55rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* 3) FORZAR la botonera del DIPUTADO en COLUMNA (todas las vistas) */
+.diputado-card .acciones{
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px;
+  margin-top: auto;                     /* siempre pegada abajo */
+}
+.diputado-card .acciones button{
+  width: 100%;
+  margin: 0;                            /* que no rompa la simetría */
+  padding: 10px 8px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+/* 4) Ajuste fino en móvil para los botones del diputado */
+@media (max-width: 768px){
+  .diputado-card .acciones button{
+    padding: 9px 6px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
 }
