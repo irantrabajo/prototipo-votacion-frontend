@@ -13,33 +13,6 @@ body {
 
 .hidden { display: none !important }
 
-/* Sidebar */
-.sidebar {
-  position: fixed;
-  top: 0; left: 0;
-  width: 200px; height: 100%;
-  background: #fff;
-  padding: 1rem;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.3);
-  color: #800000;
-  z-index: 1000;
-}
-.sidebar h2 { margin-top: 0; }
-.sidebar a {
-  display: block;
-  margin: 1rem 0;
-  color: #800000;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.main {
-  margin-left: 220px;
-  padding: 1rem;
-  padding-top: 0.5rem;
-  min-height: calc(100vh - 1rem);
-  display: block;
-}
 
 /* Tarjetas de diputados */
 #diputados-container {
@@ -817,3 +790,29 @@ body {
   }
 }
 
+/* --- LINKS DEL MENÚ LATERAL --- */
+.sidebar a {
+  display: block;
+  margin: 0.6rem 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  color: #800000;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar a:hover {
+  background-color: #f6eaea; /* tono claro */
+}
+
+.sidebar a:active {
+  background-color: #edd3d3; /* un poco más fuerte */
+}
+
+.sidebar a:focus {
+  outline: 2px solid #e5bcbc;
+  outline-offset: 2px;
+}
+
+#linkResultados { display: none; }
