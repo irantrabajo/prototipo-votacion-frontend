@@ -69,20 +69,40 @@ body {
   border: 2px solid #800000;
 }
 
-/* Botones */
+/* Botones generales */
 button {
-  background: #800000;
+  background: #800000;              /* guinda institucional */
   color: #fff;
   border: none;
-  padding: .6rem 1rem;
-  margin: .5rem;
-  border-radius: 5px;
+  padding: 0.7rem 1.2rem;
+  margin: 0.5rem;
+  border-radius: 8px;               /* esquinas más suaves */
   font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background .3s;
+  transition: background-color 0.25s ease,
+              transform 0.15s ease,
+              box-shadow 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);  /* sombra ligera */
 }
-button:hover { background: #a00000; }
+
+button:hover {
+  background-color: #a00000;        /* tono más claro */
+  transform: translateY(-2px);      /* ligero levantamiento */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+button:active {
+  background-color: #660000;        /* más oscuro al hacer clic */
+  transform: translateY(0);         /* vuelve al plano */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+button:focus {
+  outline: 2px solid #e5bcbc;       /* borde sutil */
+  outline-offset: 2px;
+}
 
 /* Inputs */
 #sesion input,
@@ -112,50 +132,6 @@ button:hover { background: #a00000; }
   box-shadow: 0 0 15px rgba(0,0,0,0.1);
   font-family: 'Poppins', sans-serif;
   animation: floatIn 1.2s ease-out;
-}
-
-/* Mobile responsiveness */
-@media screen and (max-width: 768px) {
-  .sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    box-shadow: none;
-    border-bottom: 2px solid #800000;
-  }
-
-  .main {
-    margin-left: 0;
-    padding: 1rem 0.5rem;
-  }
-
-  .diputado-card {
-    width: 90%;
-  }
-
-  button, input, select {
-    width: 90% !important;
-    max-width: 400px;
-  }
-
-  .login-container {
-    margin: 2rem 1rem;
-    width: 90%;
-    padding: 1rem;
-  }
-
-  .botones {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  #chartResumen {
-    width: 100% !important;
-    height: auto !important;
-  }
 }
 
 /* Texto completo de sesión */
@@ -815,16 +791,29 @@ body {
 /* 9) Título principal un toque más discreto en móvil */
 .titulo-general{ font-size: clamp(22px, 6vw, 30px); margin-bottom: .6rem; }
 
-/* Centrar menú superior en móvil */
 @media (max-width: 768px) {
   .sidebar {
-    text-align: center;       /* centra el contenido */
-  }
-  .sidebar a {
-    margin: 0.5rem auto;      /* espacio simétrico arriba/abajo */
-    display: inline-block;    /* evita que ocupe todo el ancho */
-  }
-  .sidebar h2 {
+    position: static;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;   /* apila los links */
+    align-items: center;      /* centra horizontal */
+    justify-content: center;  /* centra si hay alto extra */
+    gap: 1rem;                /* respiración uniforme */
+    box-shadow: none;
+    border-bottom: 2px solid #800000;
     text-align: center;
   }
+
+  .sidebar a {
+    display: block;           /* evita que se formen en fila */
+    margin: 0;                /* el espacio lo da gap */
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 1rem 0.5rem;
+  }
 }
+
