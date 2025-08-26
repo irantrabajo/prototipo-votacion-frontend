@@ -85,6 +85,11 @@ function mostrarApp() {
   document.getElementById('uploadOrden').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  updateResultadosLinkVisibility(); // lo oculta al inicio
+});
+
+
 // —————————————————————————
 // 0) Lista global de textos de asuntos
 // —————————————————————————
@@ -244,6 +249,8 @@ async function confirmarOrden() {
     alert("No se encontraron asuntos después de crearlos.");
   }
 
+  updateResultadosLinkVisibility();
+
   sessionStorage.setItem(K_ASUNTO_CNT, String(asuntos.length));
   VOTADOS.clear();
   const busc = document.getElementById('buscadorDiputado');
@@ -308,6 +315,7 @@ async function guardarAsunto() {
   const { asunto_id } = await res.json();
   sessionStorage.setItem(K_AID, asunto_id);
   sessionStorage.setItem(K_ANAME, name);
+  updateResultadosLinkVisibility();
   const cnt = parseInt(sessionStorage.getItem(K_ASUNTO_CNT) || '0', 10) + 1;
   sessionStorage.setItem(K_ASUNTO_CNT, String(cnt));
   VOTADOS.clear();  
@@ -674,16 +682,31 @@ function filtrarDiputados() {
 // Router de secciones
 // —————————————————————————
 function showSection(id) {
+  // 🔒 Bloqueo: no dejar entrar a "resultados" si aún no hay votación
+  if (id === 'resultados') {
+    const aid = sessionStorage.getItem('asunto_id');
+    const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+    if (!aid && (!Array.isArray(arr) || arr.length === 0)) {
+      return; // no navegues a resultados
+    }
+  }
+
+  // Mostrar/ocultar secciones
   ['uploadOrden','sesion','asunto','diputados','resultados','historial','sesionesPasadas','vistaEdicion']
     .forEach(s => {
       const el = document.getElementById(s);
       if (el) el.classList.toggle('hidden', s !== id);
     });
+
   document.querySelector('.sidebar').style.display = 'block';
 
+  // Side-effects por sección
   if (id === 'resultados') marcarAusentes().then(cargarResultados);
   if (id === 'sesionesPasadas') cargarSesionesPasadas();
-  if (id === 'historial') document.getElementById('votosPrevios').innerHTML = '';
+  if (id === 'historial') {
+    const vp = document.getElementById('votosPrevios');
+    if (vp) vp.innerHTML = '';
+  }
   if (id === 'diputados') setTimeout(hookSearchShortcuts, 0);
 }
 
@@ -1015,6 +1038,7 @@ const filtrarDiputadosDebounced = debounce(filtrarDiputados, 80);
 // —————————————————————————
 function terminarSesion() {
   sessionStorage.clear();
+  updateResultadosLinkVisibility();   
   location.reload();
 }
 
@@ -1269,6 +1293,18 @@ function fitTextBlock(doc, raw, x, y, maxWidth, {
   doc.text(lines, x, y);
   const usedHeight = lines.length * (size * 1.2) + (lines.length - 1) * lineGap;
   return { nextY: y + usedHeight, fontSize: size, lines };
+}
+
+function updateResultadosLinkVisibility() {
+  const link = document.getElementById('linkResultados');
+  if (!link) return;
+
+  // Mostrar sólo si ya hay asunto activo (o al menos un asunto cargado)
+  const asuntoId   = sessionStorage.getItem('asunto_id');
+  const asuntosArr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+
+  const puedeVerResultados = Boolean(asuntoId || (Array.isArray(asuntosArr) && asuntosArr.length > 0));
+  link.style.display = puedeVerResultados ? 'block' : 'none';
 }
 
 // Exponer funciones al DOM
