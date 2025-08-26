@@ -85,6 +85,8 @@ function mostrarApp() {
   document.getElementById('uploadOrden').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+updateResultadosLinkVisibility();
+
 document.addEventListener('DOMContentLoaded', () => {
   updateResultadosLinkVisibility(); // lo oculta al inicio
 });
