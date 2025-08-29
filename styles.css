@@ -816,3 +816,19 @@ body {
 }
 
 #linkResultados { display: none; }
+
+/* Panel blanco principal (restaurado) */
+.page-panel{
+  background:#fff;
+  border:1px solid var(--bord, #f0dcdc);
+  border-radius:16px;
+  box-shadow:0 8px 22px rgba(0,0,0,.08);
+  padding:20px;
+  max-width:1100px;
+  margin:16px auto;
+  text-align:center;
+}
+@media (max-width:768px){
+  .page-panel{ margin:12px; padding:16px; }
+}
+
