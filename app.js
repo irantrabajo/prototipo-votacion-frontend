@@ -1114,15 +1114,12 @@ async function exportAsuntoPDF() {
   y = doc.lastAutoTable.finalY + 18;
   if (y > ph - 260) { doc.addPage(); y = 60; }
 
-  // --- Gráfica (Chart.js) con fuentes grandes ---
-  // Canvas offscreen "grande" para que se vea nítida
   const canvas = document.createElement('canvas');
   canvas.width = 900;   // más grande = mejor resolución
   canvas.height = 350;
 
   const ctx = canvas.getContext('2d');
 
-  // Aumentamos tamaños de fuente de ejes/leyenda
   const chart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -1136,6 +1133,7 @@ async function exportAsuntoPDF() {
     options: {
       responsive: false,
       maintainAspectRatio: false,
+      animation: false, // ← clave: sin animación para “congelar” el frame
       plugins: {
         legend: { labels: { font: { size: 16 } } },
         title: { display: true, text: 'Gráfica de Resultados', font: { size: 18 } }
@@ -1145,21 +1143,20 @@ async function exportAsuntoPDF() {
         y: { ticks: { font: { size: 14 } }, beginAtZero: true }
       }
     }
-    
   });
 
-  // Esperar a que Chart pinte (un frame)
-  await new Promise(r => requestAnimationFrame(r));
+  // Asegurar que esté renderizada antes de capturar
+  chart.update();
   const img = canvas.toDataURL('image/png');
   chart.destroy();
-  
 
   // Insertar imagen ocupando el ancho útil
   const imgW = pw - 80;
   const imgH = (imgW / canvas.width) * canvas.height;
   doc.addImage(img, 'PNG', 40, y, imgW, imgH);
-
   doc.save('asunto.pdf');
+
+
 }
 
 // Normaliza/contabiliza votos para gráficas
@@ -1297,16 +1294,29 @@ function fitTextBlock(doc, raw, x, y, maxWidth, {
   return { nextY: y + usedHeight, fontSize: size, lines };
 }
 
-function updateResultadosLinkVisibility() {
+async function updateResultadosLinkVisibility() {
   const link = document.getElementById('linkResultados');
   if (!link) return;
 
-  // Mostrar sólo si ya hay asunto activo (o al menos un asunto cargado)
-  const asuntoId   = sessionStorage.getItem('asunto_id');
-  const asuntosArr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+  // Requisitos mínimos: debe existir sesión y asunto activo
+  const sid = sessionStorage.getItem('sesion_id');
+  const aid = sessionStorage.getItem('asunto_id');
+  if (!sid || !aid) {
+    link.style.display = 'none';
+    return;
+  }
 
-  const puedeVerResultados = Boolean(asuntoId || (Array.isArray(asuntosArr) && asuntosArr.length > 0));
-  link.style.display = puedeVerResultados ? 'block' : 'none';
+  // Mostrar SOLO si ya hay al menos 1 voto en este asunto
+  try {
+    const res = await fetch(`${backend}/api/resultados?sesion_id=${sid}&asunto_id=${aid}`);
+    const arr = await res.json();
+    const r = arr && arr[0];
+    const total = (r?.a_favor || 0) + (r?.en_contra || 0) + (r?.abstenciones || 0) + (r?.ausente || 0);
+    link.style.display = total > 0 ? 'block' : 'none';
+  } catch (e) {
+    link.style.display = 'none';
+    console.error('updateResultadosLinkVisibility:', e);
+  }
 }
 
 // Exponer funciones al DOM

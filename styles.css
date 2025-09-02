@@ -13,15 +13,6 @@ body {
 
 .hidden { display: none !important }
 
-
-/* Tarjetas de diputados */
-#diputados-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-}
-
 .diputado-card {
   background: #fff;
   color: #000;
@@ -405,6 +396,25 @@ body {
   flex: 0 0 auto;
   width: auto;
   padding: 6px 10px;
+}
+
+/* ===== Layout de ESCRITORIO (por defecto) ===== */
+.sidebar{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100vh;
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0,0,0,.08);
+  z-index: 1000;
+}
+
+.main{
+  margin-left: 240px;   /* deja espacio para la sidebar */
+  padding: 16px;
+  min-height: 100vh;
 }
 
 /* Anula la regla "button { width:90% }" SOLO dentro de la lista */
