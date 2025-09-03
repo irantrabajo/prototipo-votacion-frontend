@@ -434,6 +434,7 @@ async function votar(did, voto) {
     // 4) Mantén vista de Diputados arriba
     const secDip = document.getElementById('diputados');
     if (secDip) secDip.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    await updateResultadosLinkVisibility();
 
   } catch (err) {
     console.error("❌ Error al votar:", err.message);
@@ -1298,24 +1299,22 @@ async function updateResultadosLinkVisibility() {
   const link = document.getElementById('linkResultados');
   if (!link) return;
 
-  // Requisitos mínimos: debe existir sesión y asunto activo
-  const sid = sessionStorage.getItem('sesion_id');
+  const sid = sessionStorage.getItem('sesion_id'); // o K_SID si prefieres
   const aid = sessionStorage.getItem('asunto_id');
-  if (!sid || !aid) {
-    link.style.display = 'none';
-    return;
-  }
 
-  // Mostrar SOLO si ya hay al menos 1 voto en este asunto
+  // ✅ Failsafe: si hay asunto activo, muéstralo SIEMPRE
+  const hayAsuntoActivo = Boolean(sid && aid);
+  link.style.display = hayAsuntoActivo ? 'block' : 'none';
+  if (!hayAsuntoActivo) return;
+
+  // (Opcional) Intenta leer resultados solo para log/diagnóstico
   try {
     const res = await fetch(`${backend}/api/resultados?sesion_id=${sid}&asunto_id=${aid}`);
     const arr = await res.json();
-    const r = arr && arr[0];
-    const total = (r?.a_favor || 0) + (r?.en_contra || 0) + (r?.abstenciones || 0) + (r?.ausente || 0);
-    link.style.display = total > 0 ? 'block' : 'none';
+    console.log('[Resultados] conteo actual:', arr);
+    // No lo ocultamos aunque sea 0; marcarAusentes corre al entrar a "Resultados".
   } catch (e) {
-    link.style.display = 'none';
-    console.error('updateResultadosLinkVisibility:', e);
+    console.warn('No pude consultar /resultados; dejo visible por asunto activo.', e);
   }
 }
 
