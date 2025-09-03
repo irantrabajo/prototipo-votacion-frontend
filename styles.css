@@ -825,7 +825,8 @@ body {
   outline-offset: 2px;
 }
 
-#linkResultados { display: none; }
+/* mostrar por defecto; lo controlamos con JS si hace falta */
+#linkResultados { display: inline-block; }
 
 /* Panel blanco principal (restaurado) */
 .page-panel{

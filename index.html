@@ -52,11 +52,12 @@
     <h2>🗳️ Votación</h2>
     <a onclick="showSection('uploadOrden')">Orden del Día</a>
     <a onclick="showSection('sesion')">Sesión</a>
-    <a id="linkResultados" style="display:none" onclick="showSection('resultados')">Resultados</a>
+    <!-- ✅ Asegúrate de que exista y NO tenga style=display:none -->
+    <a id="linkResultados" onclick="showSection('resultados')">Resultados</a>
     <a onclick="showSection('sesionesPasadas')">Sesiones Pasadas</a>
   </div>
 
-  <div class="main hidden">
+  <div class="main">
     <div class="page-panel">
 
     <h1 class="titulo-general">
@@ -78,6 +79,7 @@
         </div>
       </div>
     </section>
+
     <!-- 1) Bienvenida -->
     <section id="bienvenida" class="hidden">
       <h2>🗳️ Bienvenido al Sistema de Votación</h2>
@@ -107,23 +109,23 @@
     <!-- 4) Diputados -->
     <section id="diputados" class="hidden">
       <h2>Vota por cada diputado:</h2>
+
+      <!-- ✅ NUEVO: banner con el asunto actual -->
+      <p id="asuntoActual" style="margin:4px 0 10px;color:#7a0000;font-weight:600;"></p>
+
       <input
-      type="search"
-      id="buscadorDiputado"
-      placeholder="Buscar diputado por nombre..."
-      oninput="filtrarDiputados()"
-      enterkeyhint="search"
-      inputmode="search"
-      spellcheck="false"
-      autocomplete="off"
-      autocapitalize="off"
-      style="margin-bottom:1rem; padding:0.5rem; width:100%; max-width:400px; border:2px solid #800000; border-radius:8px;"
-    />
-    
-
-
-
-    <div id="diputados-container"></div>
+        type="search"
+        id="buscadorDiputado"
+        placeholder="Buscar diputado por nombre..."
+        oninput="filtrarDiputados()"
+        enterkeyhint="search"
+        inputmode="search"
+        spellcheck="false"
+        autocomplete="off"
+        autocapitalize="off"
+        style="margin-bottom:1rem; padding:0.5rem; width:100%; max-width:400px; border:2px solid #800000; border-radius:8px;"
+      />
+      <div id="diputados-container"></div>
     </section>
 
     <!-- 5) Resultados por Asunto -->
@@ -131,42 +133,35 @@
       <div class="container-page">
         <div class="card soft">
           <h2 class="section-title">Resumen de Resultados</h2>
-    
-          <!-- Aquí inyectamos el título de Sesión/Asunto y los totales -->
+
           <div id="resumenSesion"></div>
-    
-          <!-- Gráfica -->
+
           <div class="card" style="margin-top:12px;">
             <canvas id="chartResumen" class="hidden"></canvas>
           </div>
-    
-          <!-- Acciones del ASUNTO -->
+
           <div id="botonSiguienteAsunto" class="hidden actions" style="margin-top:14px;">
             <button class="full" onclick="avanzarAlSiguienteAsunto()">⏭️ Siguiente Asunto</button>
           </div>
-    
+
           <div class="actions" style="margin-top:6px;">
             <button onclick="exportAsuntoTXT()">Descargar Asunto (TXT)</button>
             <button onclick="exportAsuntoPDF()">Descargar Asunto (PDF)</button>
             <button onclick="exportAsuntoXLS()">Descargar Asunto (Excel)</button>
           </div>
-    
-          <hr style="border:none; border-top:1px solid #f0dcdc; margin:16px 0;"/>
-          <!-- Acciones de la SESIÓN -->
-          <div id="accionesSesion" class="actions hidden">
 
+          <hr style="border:none; border-top:1px solid #f0dcdc; margin:16px 0;"/>
+          <div id="accionesSesion" class="actions hidden">
             <button class="full" onclick="mostrarResumenSesion()">Ver Resumen de Sesión</button>
             <button onclick="exportSesionTXT()">Descargar Sesión (TXT)</button>
             <button onclick="exportSesionPDF()">Descargar Sesión (PDF)</button>
             <button onclick="exportSesionXLS()">Descargar Sesión (Excel)</button>
-      </div>
-  
-  
-    
+          </div>
+
           <pre id="resumenSesionCompleto" class="hidden"></pre>
         </div>
       </div>
-    </section>       
+    </section>
 
     <!-- 7) Sesiones pasadas -->
     <section id="sesionesPasadas" class="hidden">
@@ -178,6 +173,7 @@
     <div id="botonTerminarSesion" class="hidden">
       <button onclick="terminarSesion()">🔁 Terminar Sesión</button>
     </div>
+
     </div>
   </div>
 </body>
