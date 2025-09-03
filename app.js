@@ -1319,6 +1319,7 @@ async function updateResultadosLinkVisibility() {
   }
 }
 
+
 // Exponer funciones al DOM
 window.uploadOrden        = uploadOrden;
 window.confirmarOrden     = confirmarOrden;
@@ -1330,7 +1331,7 @@ window.cargarDiputados    = cargarDiputados;
 window.cargarResultados   = cargarResultados;
 window.terminarSesion     = terminarSesion;
 window.mostrarResumenSesion = mostrarResumenSesion;
-window.exportSesionTXT    = exportSesionTXT; // (PDF/XLS los tienes en tus otras funciones)
+window.exportSesionTXT    = exportSesionTXT; 
 window.cargarSesionesPasadas = cargarSesionesPasadas;
 window.verDetallesSesion    = verDetallesSesion;
 window.editarVoto           = editarVoto;
