@@ -727,7 +727,7 @@ function showSection(id) {
     setTimeout(hookSearchShortcuts, 0);
     actualizarAsuntoActual();
 }
-
+}
 // —————————————————————————
 // Sesiones pasadas / edición simple
 // —————————————————————————
@@ -1356,5 +1356,4 @@ window.exportSesionXLS = exportSesionXLS;
 window.exportAsuntoTXT = exportAsuntoTXT;
 window.exportAsuntoPDF = exportAsuntoPDF;
 window.exportAsuntoXLS = exportAsuntoXLS;
-
-
+window.login = login;
