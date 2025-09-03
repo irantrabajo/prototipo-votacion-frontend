@@ -42,6 +42,16 @@ function absolutize(url) {
 // 👉 Orden preferido (si quieres un orden fijo, mete aquí nombres exactos)
 const ordenPreferido = []; // p.ej: ["Víctor Sánchez", "Geraldine...", "Irán López", ...]
 
+
+// Muestra el asunto activo en el banner de la vista "Diputados"
+function actualizarAsuntoActual() {
+  const el = document.getElementById('asuntoActual');
+  const asunto = sessionStorage.getItem('nombre_asunto') || ''; // K_ANAME
+  if (!el) return;
+  el.textContent = asunto ? `Asunto en votación: ${asunto}` : '';
+}
+
+
 // —————————————————————————
 // Login
 // —————————————————————————
@@ -247,6 +257,7 @@ async function confirmarOrden() {
     sessionStorage.setItem('asunto_index', '0');
     sessionStorage.setItem(K_AID, asuntos[0].id);
     sessionStorage.setItem(K_ANAME, asuntos[0].asunto);
+    actualizarAsuntoActual();
   } else {
     alert("No se encontraron asuntos después de crearlos.");
   }
@@ -273,6 +284,7 @@ async function avanzarAlSiguienteAsunto() {
     sessionStorage.setItem('asunto_index', String(index));
     sessionStorage.setItem(K_AID, siguiente.id);
     sessionStorage.setItem(K_ANAME, siguiente.asunto);
+    actualizarAsuntoActual();
     VOTADOS.clear();
     const busc = document.getElementById('buscadorDiputado');
 if (busc) busc.value = '';
@@ -317,6 +329,7 @@ async function guardarAsunto() {
   const { asunto_id } = await res.json();
   sessionStorage.setItem(K_AID, asunto_id);
   sessionStorage.setItem(K_ANAME, name);
+  actualizarAsuntoActual();
   updateResultadosLinkVisibility();
   const cnt = parseInt(sessionStorage.getItem(K_ASUNTO_CNT) || '0', 10) + 1;
   sessionStorage.setItem(K_ASUNTO_CNT, String(cnt));
@@ -710,7 +723,9 @@ function showSection(id) {
     const vp = document.getElementById('votosPrevios');
     if (vp) vp.innerHTML = '';
   }
-  if (id === 'diputados') setTimeout(hookSearchShortcuts, 0);
+  if (id === 'diputados') {
+    setTimeout(hookSearchShortcuts, 0);
+    actualizarAsuntoActual();
 }
 
 // —————————————————————————
