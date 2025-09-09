@@ -843,3 +843,145 @@ body {
   .page-panel{ margin:12px; padding:16px; }
 }
 
+/* ============ Sesiones Pasadas (tabla tipo directorio) ============ */
+.tabla-wrapper{
+  overflow:auto;
+  border:1px solid #f0dcdc;
+  border-radius:12px;
+  background:#fff;
+}
+
+.tabla-sesiones{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+  color:#2b2b2b;
+}
+
+.tabla-sesiones thead th{
+  position:sticky;
+  top:0;
+  background:#800000;
+  color:#fff;
+  padding:10px 12px;
+  text-align:left;
+  font-weight:700;
+  z-index:1;
+}
+
+.tabla-sesiones tbody td{
+  padding:10px 12px;
+  border-top:1px solid #f7eaea;
+  vertical-align:middle;
+  background:#fff;
+}
+
+.tabla-sesiones tbody tr:hover{
+  background:#fff6f6;
+}
+
+.tabla-sesiones .siglas{
+  font-weight:700;
+  color:#800000;
+  white-space:nowrap;
+}
+
+.tabla-sesiones .nombre-sesion{
+  font-weight:600;
+  color:#3a3a3a;
+}
+
+.tabla-sesiones .fecha{
+  white-space:nowrap;
+  color:#6a3333;
+}
+
+/* Acciones */
+.tabla-sesiones .acciones{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.tabla-sesiones .acciones .btn-link{
+  display:inline-block;
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #f0dcdc;
+  background:#fff;
+  color:#800000;
+  font-weight:600;
+  font-size:.9rem;
+  cursor:pointer;
+  transition:background .2s ease, box-shadow .2s ease, transform .08s ease;
+  text-decoration:none; /* por si usas <a> */
+}
+.tabla-sesiones .acciones .btn-link:hover{
+  background:#fff0f0;
+  box-shadow:0 2px 8px rgba(128,0,0,.12);
+  transform:translateY(-1px);
+}
+
+/* Botón eliminar con estado de peligro */
+.tabla-sesiones .acciones .btn-danger{
+  border-color:#f4c7c7;
+  color:#a00000;
+}
+.tabla-sesiones .acciones .btn-danger:hover{
+  background:#ffe8e8;
+}
+
+/* Celda con botón único centrado (si lo usas) */
+.tabla-sesiones td.center{
+  text-align:center;
+}
+
+/* Buscador de sesiones (opcional) */
+#buscadorSesiones{
+  padding:.55rem .7rem;
+  width:100%;
+  max-width:520px;
+  border:2px solid #800000;
+  border-radius:10px;
+  font-size:16px;
+}
+
+/* Responsive */
+@media (max-width: 800px){
+  .tabla-sesiones thead th:nth-child(4),
+  .tabla-sesiones tbody td:nth-child(4){ /* Descargar */
+    display:none;
+  }
+}
+@media (max-width: 600px){
+  .tabla-sesiones thead th:nth-child(3),
+  .tabla-sesiones tbody td:nth-child(3){ /* Fecha */
+    display:none;
+  }
+  .tabla-sesiones .acciones{
+    gap:6px;
+  }
+  .tabla-sesiones .acciones .btn-link{
+    padding:7px 8px;
+    font-size:.85rem;
+  }
+}
+
+.tabla-sesiones .acciones .btn-link,
+.tabla-sesiones .acciones .btn-link > * {
+  vertical-align: middle;
+}
+.tabla-sesiones .acciones .btn-link svg {
+  width: 16px; height: 16px;
+  margin-right: 6px;
+}
+#tablaSesionesBody td[colspan="6"]{
+  color:#6a3333; background:#fffafa;
+  font-weight:500;
+}
+
+.tabla-sesiones tbody tr.clickable:hover{
+  background:#fff0f0; cursor:pointer;
+}
+
+#buscadorSesiones::placeholder{ color: rgba(128,0,0,0.6); }

@@ -163,13 +163,46 @@
       </div>
     </section>
 
-    <!-- 7) Sesiones pasadas -->
-    <section id="sesionesPasadas" class="hidden">
-      <h2>🗂️ Sesiones Pasadas</h2>
-      <ul id="listaSesionesPasadas"></ul>
-    </section>
+    <!-- 7) Sesiones pasadas (vista tipo tabla) -->
+<section id="sesionesPasadas" class="hidden">
+  <h2>🗂️ Sesiones Pasadas</h2>
 
-    <!-- 6) Terminar Sesión -->
+  <!-- Buscador (usa la función que sí existe en app.js) -->
+  <div style="margin:10px 0 14px;">
+    <input id="buscadorSesiones" type="search"
+           placeholder="Buscar por usuario o nombre de sesión…"
+           oninput="filtrarSesiones()"
+           style="padding:.55rem .7rem; width:100%; max-width:520px; border:2px solid #800000; border-radius:10px;">
+  </div>
+
+  <div class="tabla-wrapper">
+    <table class="tabla-sesiones" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="width:140px; text-align:left;">Usuario/ID</th>
+          <th style="text-align:left;">Sesión / Orden del día</th>
+          <th style="width:190px; text-align:left;">Fecha</th>
+          <th style="width:140px; text-align:left;">Descargar</th>
+          <th style="width:120px; text-align:left;">Editar</th>
+          <th style="width:120px; text-align:left;">Eliminar</th>
+        </tr>
+      </thead>
+      <!-- 👇 ESTE ID es el que usa tu app.js: cargarSesionesPasadas() escribe aquí -->
+      <tbody id="tablaSesionesBody">
+        <tr><td colspan="6" style="text-align:center;">Cargando sesiones…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- “Por vistas”: panel con el detalle en la misma página (tu app.js lo llena con verDetallesSesion) -->
+  <div id="panelVistaSesion" class="hidden card soft" style="margin-top:16px;">
+    <div class="section-title">Vista de sesión</div>
+    <div id="votosPrevios">Selecciona una sesión para ver el detalle.</div>
+  </div>
+</section>
+
+
+    <!-- 8) Terminar Sesión -->
     <div id="botonTerminarSesion" class="hidden">
       <button onclick="terminarSesion()">🔁 Terminar Sesión</button>
     </div>

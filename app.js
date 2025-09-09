@@ -731,26 +731,73 @@ function showSection(id) {
 // —————————————————————————
 // Sesiones pasadas / edición simple
 // —————————————————————————
+// ======== Sesiones pasadas (tabla estilo directorio) ========
+let SESIONES_CACHE = []; // para filtrar en cliente
+
+function _formatoFecha(f) {
+  if (!f) return '—';
+  const d = new Date(f);
+  if (isNaN(d)) return String(f);
+  // ej: 2025-06-02 14:08
+  return d.toLocaleString(undefined, {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function _rowSesionHTML(s) {
+  const usuario  = s.usuario || s.creado_por || s.user || '—';
+  const nombre   = s.nombre || s.sesion || '—';
+  const fechaRaw = s.fecha || s.created_at || s.f_creacion || s.fecha_creacion;
+  const fecha    = _formatoFecha(fechaRaw);
+
+  // data-* sirve para el filtro en cliente
+  return `
+    <tr class="fila-sesion"
+        data-usuario="${(usuario||'').toString().toLowerCase()}"
+        data-nombre="${(nombre||'').toString().toLowerCase()}">
+      <td class="siglas">${usuario}</td>
+      <td class="nombre-sesion">${nombre}</td>
+      <td class="fecha">${fecha}</td>
+      <td class="acciones">
+        <button class="btn-link" onclick="descargarSesion(${s.id})">📥 Descargar</button>
+        <button class="btn-link" onclick="editarSesion(${s.id})">✏️ Editar</button>
+        <button class="btn-link btn-danger" onclick="eliminarSesion(${s.id})">🗑️ Eliminar</button>
+      </td>
+    </tr>
+  `;
+}
+
 async function cargarSesionesPasadas() {
-  const ul = document.getElementById('listaSesionesPasadas');
-  ul.innerHTML = '<li>Cargando sesiones…</li>';
+  const tbody = document.getElementById('tablaSesionesBody');
+  if (!tbody) return; // por si aún no estás en esa vista
+  tbody.innerHTML = `<tr><td colspan="4">Cargando sesiones…</td></tr>`;
+
   try {
     const res = await fetch(`${backend}/api/sesiones`);
     const sesiones = await res.json();
-    if (!sesiones.length) ul.innerHTML = '<li>No hay sesiones aún</li>';
-    else ul.innerHTML = sesiones.map(s =>
-      `<li>
-         <strong>${s.nombre}</strong>
-         <button onclick="verDetallesSesion(${s.id}, ${JSON.stringify(s.nombre)})">
-           Ver y editar
-         </button>
-       </li>`
-    ).join('');
+
+    SESIONES_CACHE = Array.isArray(sesiones) ? sesiones : [];
+
+    if (!SESIONES_CACHE.length) {
+      tbody.innerHTML = `<tr><td colspan="4">No hay sesiones aún</td></tr>`;
+      return;
+    }
+
+    // orden más reciente primero si viene 'fecha' o 'created_at'
+    SESIONES_CACHE.sort((a,b) => {
+      const fa = new Date(a.fecha || a.created_at || 0).getTime() || 0;
+      const fb = new Date(b.fecha || b.created_at || 0).getTime() || 0;
+      return fb - fa;
+    });
+
+    tbody.innerHTML = SESIONES_CACHE.map(_rowSesionHTML).join('');
   } catch (err) {
-    ul.innerHTML = '<li>Error al cargar.</li>';
     console.error(err);
+    tbody.innerHTML = `<tr><td colspan="4">Error al cargar.</td></tr>`;
   }
 }
+
 
 async function verDetallesSesion(idSesion, nombreSesion) {
   const cont = document.getElementById('votosPrevios');
@@ -1333,6 +1380,61 @@ async function updateResultadosLinkVisibility() {
   }
 }
 
+function filtrarSesiones() {
+  const q = (document.getElementById('buscadorSesiones')?.value || '')
+              .trim().toLowerCase();
+  const rows = document.querySelectorAll('#tablaSesionesBody .fila-sesion');
+  rows.forEach(tr => {
+    const u = tr.getAttribute('data-usuario') || '';
+    const n = tr.getAttribute('data-nombre')  || '';
+    const show = u.includes(q) || n.includes(q);
+    tr.style.display = show ? '' : 'none';
+  });
+}
+
+// 📥 Descargar PDF completo de la sesión.
+// Requiere soporte en backend, por ejemplo: GET /api/sesion/:id/pdf
+async function descargarSesion(idSesion) {
+  try {
+    // abre en nueva pestaña (si el backend entrega application/pdf)
+    const url = `${backend}/api/sesion/${idSesion}/pdf`;
+    const win = window.open(url, '_blank');
+    if (!win) alert('No se pudo abrir la descarga. Revisa el bloqueador de ventanas.');
+  } catch (e) {
+    console.error('descargarSesion:', e);
+    alert('No se pudo descargar la sesión.');
+  }
+}
+
+// ✏️ Editar: reusa tu vista de edición existente (verDetallesSesion)
+function editarSesion(idSesion) {
+  const ses = SESIONES_CACHE.find(s => s.id === idSesion);
+  const nombre = ses?.nombre || 'Sesión';
+  verDetallesSesion(idSesion, nombre); // ya la tienes implementada
+}
+
+// 🗑️ Eliminar por completo una sesión (con confirmación).
+// Requiere DELETE /api/sesion/:id en backend (borra asuntos y votos en cascada).
+async function eliminarSesion(idSesion) {
+  const ses = SESIONES_CACHE.find(s => s.id === idSesion);
+  const nombre = ses?.nombre || `ID ${idSesion}`;
+  if (!confirm(`¿Eliminar la sesión "${nombre}"? Esta acción no se puede deshacer.`)) return;
+
+  try {
+    const res = await fetch(`${backend}/api/sesion/${idSesion}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || 'Error al eliminar');
+    }
+    // refresca tabla
+    await cargarSesionesPasadas();
+  } catch (e) {
+    console.error('eliminarSesion:', e);
+    alert('No se pudo eliminar la sesión.');
+  }
+}
+
+
 
 // Exponer funciones al DOM
 window.uploadOrden        = uploadOrden;
@@ -1357,3 +1459,7 @@ window.exportAsuntoTXT = exportAsuntoTXT;
 window.exportAsuntoPDF = exportAsuntoPDF;
 window.exportAsuntoXLS = exportAsuntoXLS;
 window.login = login;
+window.descargarSesion = descargarSesion;
+window.editarSesion    = editarSesion;
+window.eliminarSesion  = eliminarSesion;
+window.filtrarSesiones = filtrarSesiones;
