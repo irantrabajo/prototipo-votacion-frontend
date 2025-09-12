@@ -67,18 +67,15 @@
 
     <!-- 0) Carga Orden del Día -->
     <section id="uploadOrden" class="hidden">
-      <h2>📄 Carga la Orden del Día</h2>
+      <h2>📄 Subir la Orden del Día</h2>
       <input type="file" id="fileOrden" accept="application/pdf" />
-      <button onclick="uploadOrden()">Procesar Orden del Día</button>
-      <div id="previewOrden" class="hidden" style="margin-top:1rem;">
-        <h3 id="previewSesion"></h3>
-        <p id="previewNombreSesionOriginal" style="color:#555;"></p>
-        <ul id="previewAsuntos"></ul>
-        <div class="botones">
-          <button onclick="confirmarOrden()">✅ Confirmar e Iniciar Votación</button>
-        </div>
-      </div>
-    </section>
+      <button onclick="subirOrden()">Subir Orden del Día</button>
+    
+      <!-- aviso de éxito -->
+      <p id="msgOrden" class="hidden" style="margin-top:10px;color:#2b7a2b;font-weight:600;">
+        ✔️ Orden del Día subida. Ve a la pestaña <b>Sesión</b> para procesarla.
+      </p>
+    </section>    
 
     <!-- 1) Bienvenida -->
     <section id="bienvenida" class="hidden">
@@ -89,15 +86,36 @@
 
     <!-- 2) Sesión -->
     <section id="sesion" class="hidden">
-      <div id="sesionActiva" class="hidden">
-        <p>Sesión activa: <strong id="nombreSesionActivo"></strong></p>
+      <h2>🗃️ Sesiones subidas</h2>
+    
+      <div style="margin:10px 0 14px;">
+        <input id="buscadorSes" type="search"
+               placeholder="Buscar por usuario o nombre…"
+               oninput="filtrarListaSesiones()"
+               style="padding:.55rem .7rem; width:100%; max-width:520px; border:2px solid #800000; border-radius:10px;">
       </div>
-      <div id="registroSesion">
-        <label for="nombreSesion">Nombre de la sesión:</label><br/>
-        <input type="text" id="nombreSesion" placeholder="Ej.: Sesión Ordinaria 2025" />
-        <button onclick="guardarSesion()">Empezar Votación</button>
+    
+      <div class="tabla-wrapper">
+        <table class="tabla-sesiones">
+          <thead>
+            <tr>
+              <th style="width:140px;">Usuario/ID</th>
+              <th>Sesión / Orden del día</th>
+              <th style="width:190px;">Fecha</th>
+              <th style="width:180px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyListaSesiones">
+            <tr><td colspan="4" style="text-align:center;">Cargando…</td></tr>
+          </tbody>
+        </table>
       </div>
-    </section>
+    
+      <!-- indicador de sesión activa (si lo quieres) -->
+      <div id="sesionActiva" class="hidden" style="margin-top:10px;">
+        Sesión activa: <strong id="nombreSesionActivo"></strong>
+      </div>
+    </section>    
 
     <!-- 3) Asunto -->
     <section id="asunto" class="hidden">

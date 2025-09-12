@@ -107,61 +107,110 @@ document.addEventListener('DOMContentLoaded', () => {
 // —————————————————————————
 let listaAsuntos = [];
 
-// 0.1) Subir y previsualizar Orden del Día
-async function uploadOrden() {
+// ====== ORDEN DEL DÍA: solo SUBIR ======
+async function subirOrden() {
   const input = document.getElementById('fileOrden');
-  if (!input.files.length) {
-    alert('Selecciona un archivo PDF.');
-    return;
-  }
+  if (!input?.files?.length) return alert('Selecciona un PDF.');
 
   const archivo = input.files[0];
-  const nombreArchivo = archivo.name;
-  const form = new FormData();
-  const timestamp = new Date().toISOString().replace(/[:.-]/g, '');
-  const nuevoNombre = `${timestamp}_${nombreArchivo}`;
-  form.append('orden', new File([archivo], nuevoNombre, { type: archivo.type }));
+  const fd = new FormData();
+  fd.append('orden', archivo);
 
   try {
     const res = await fetch(`${backend}/api/orden`, {
       method: 'POST',
-      body: form
+      headers: { 'x-usuario': sessionStorage.getItem('usuario') || '' },
+      body: fd
     });
+    if (!res.ok) throw new Error(await res.text());
 
-    const contentType = res.headers.get('content-type') || '';
-    if (!res.ok || !contentType.includes('application/json')) {
-      const texto = await res.text();
-      console.error("❌ Error en uploadOrden (no JSON):", texto);
-      alert("Error al procesar PDF: " + texto);
-      return;
+    // ✅ Aviso y precarga lista para la pestaña "Sesión"
+    document.getElementById('msgOrden')?.classList.remove('hidden');
+    await cargarSesionesSubidas();
+  } catch (e) {
+    console.error('subirOrden:', e);
+    alert('No se pudo subir la Orden del Día.');
+  }
+}
+
+// ====== SESIÓN: listar y PROCESAR ======
+let SESIONES_LISTA = [];
+
+async function cargarSesionesSubidas() {
+  try {
+    const r = await fetch(`${backend}/api/sesiones`);
+    SESIONES_LISTA = await r.json();
+    pintarListaSesiones(SESIONES_LISTA);
+  } catch (e) {
+    console.error('cargarSesionesSubidas', e);
+    const tb = document.getElementById('tbodyListaSesiones');
+    if (tb) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a00;">Error cargando sesiones</td></tr>`;
+  }
+}
+
+function pintarListaSesiones(sesiones) {
+  const tb = document.getElementById('tbodyListaSesiones');
+  if (!tb) return;
+
+  if (!Array.isArray(sesiones) || !sesiones.length) {
+    tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sin sesiones</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = sesiones.map(s => `
+    <tr>
+      <td class="siglas">${s.creado_por ?? '—'}</td>
+      <td class="nombre-sesion">${s.nombre}</td>
+      <td class="fecha">${new Date(s.fecha).toLocaleString('es-MX')}</td>
+      <td class="acciones">
+        <button class="btn-link" onclick="procesarSesion(${s.id}, '${encodeURIComponent(s.nombre)}')">
+          Procesar Orden del Día
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filtrarListaSesiones() {
+  const q = (document.getElementById('buscadorSes')?.value || '').toLowerCase();
+  const filtradas = SESIONES_LISTA.filter(s =>
+    (s.nombre || '').toLowerCase().includes(q) ||
+    (s.creado_por || '').toLowerCase().includes(q)
+  );
+  pintarListaSesiones(filtradas);
+}
+
+async function procesarSesion(sesionId, nombreCodificado) {
+  const nombre = decodeURIComponent(nombreCodificado || '');
+  sessionStorage.setItem(K_SID, sesionId);
+  sessionStorage.setItem(K_SNAME, nombre);
+
+  // carga asuntos para continuar con la votación
+  await cargarAsuntosDeSesion(sesionId);
+  showSection('asunto');
+}
+
+async function cargarAsuntosDeSesion(sesionId) {
+  try {
+    const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
+    const asuntos = await r.json();
+
+    // guarda para navegación/“siguiente asunto”
+    sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
+    sessionStorage.setItem('asunto_index', '0');
+    if (asuntos[0]) {
+      sessionStorage.setItem(K_AID, asuntos[0].id);
+      sessionStorage.setItem(K_ANAME, asuntos[0].asunto);
     }
+    actualizarAsuntoActual();
 
-    const payload = await res.json();
+    // llena el <select> si usas esa vista
+    const sel = document.getElementById('listaAsuntos');
+    if (sel) sel.innerHTML = asuntos.map(a => `<option value="${a.id}">${a.asunto}</option>`).join('');
 
-    // nombre original detectado
-    if (payload.nombreOriginal) {
-      document.getElementById("nombreSesion").value = payload.nombreOriginal;
-      document.getElementById("previewNombreSesionOriginal").innerText = payload.nombreOriginal;
-    } else {
-      document.getElementById("nombreSesion").value = payload.nombreOriginal || payload.sesion;
-      document.getElementById("previewNombreSesionOriginal").innerText = '';
-    }
-
-    if (res.status === 201) {
-      listaAsuntos = payload.asuntos;
-      sessionStorage.setItem(K_SID, payload.sesion_id);
-
-      document.getElementById('previewSesion').innerText = `Sesión: ${payload.nombreOriginal || archivo.name}`;
-      renderizarAsuntos();
-      document.getElementById('previewOrden').classList.remove('hidden');
-    } else {
-      const mensaje = payload.message || `Error ${res.status}`;
-      alert('Error al leer PDF: ' + mensaje);
-    }
-
-  } catch (error) {
-    console.error("❌ Error en uploadOrden:", error);
-    alert("Hubo un error al subir el PDF.");
+  } catch (e) {
+    console.error('cargarAsuntosDeSesion', e);
+    alert('No se pudieron cargar los asuntos de la sesión.');
   }
 }
 
@@ -727,6 +776,10 @@ function showSection(id) {
     setTimeout(hookSearchShortcuts, 0);
     actualizarAsuntoActual();
 }
+if (id === 'sesion') {
+  cargarSesionesSubidas();
+}
+
 }
 // —————————————————————————
 // Sesiones pasadas / edición simple
