@@ -133,17 +133,60 @@ async function subirOrden() {
   }
 }
 
-// ====== SESIÓN: listar y PROCESAR ======
-let SESIONES_LISTA = [];
+// 👇 Mostrar solo sesiones de los últimos N días en la lista "Sesiones subidas"
+const SESIONES_WINDOW_DAYS = 7;
 
+function _toDateSafe(raw) {
+  const v = raw || '';
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+function _isWithinLastDays(date, days = 7) {
+  if (!(date instanceof Date)) return false;
+  const now = Date.now();
+  const limit = now - days * 24 * 60 * 60 * 1000;
+  return date.getTime() >= limit;
+}
+
+// ====== SESIÓN: listar y PROCESAR ======
 async function cargarSesionesSubidas() {
+  const tb = document.getElementById('tbodyListaSesiones');
+  if (tb) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Cargando…</td></tr>`;
+
   try {
     const r = await fetch(`${backend}/api/sesiones`);
-    SESIONES_LISTA = await r.json();
+    const sesiones = await r.json();
+
+    // Ordenar (más nuevas primero)
+    const ordenadas = (Array.isArray(sesiones) ? sesiones : []).sort((a,b) => {
+      const fa = _toDateSafe(a.fecha || a.created_at || a.f_creacion || a.fecha_creacion)?.getTime() || 0;
+      const fb = _toDateSafe(b.fecha || b.created_at || b.f_creacion || b.fecha_creacion)?.getTime() || 0;
+      return fb - fa;
+    });
+
+    // ✅ FILTRO: solo últimas N (7) días
+    const visibles = ordenadas.filter(s => {
+      const d = _toDateSafe(s.fecha || s.created_at || s.f_creacion || s.fecha_creacion);
+      return d ? _isWithinLastDays(d, SESIONES_WINDOW_DAYS) : false;
+    });
+
+    SESIONES_LISTA = visibles;
+
+    if (!SESIONES_LISTA.length) {
+      if (tb) tb.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center;padding:16px;">
+            No hay sesiones de esta semana.<br>
+            Ve a <strong>Sesiones pasadas</strong> para ver el historial.
+          </td>
+        </tr>`;
+      return;
+    }
+
     pintarListaSesiones(SESIONES_LISTA);
+
   } catch (e) {
     console.error('cargarSesionesSubidas', e);
-    const tb = document.getElementById('tbodyListaSesiones');
     if (tb) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#a00;">Error cargando sesiones</td></tr>`;
   }
 }
@@ -161,7 +204,7 @@ function pintarListaSesiones(sesiones) {
     <tr>
       <td class="siglas">${s.creado_por ?? '—'}</td>
       <td class="nombre-sesion">${s.nombre}</td>
-      <td class="fecha">${new Date(s.fecha).toLocaleString('es-MX')}</td>
+      <td class="fecha">${_formatoFecha(s.fecha || s.created_at || s.f_creacion || s.fecha_creacion)}</td>
       <td class="acciones">
         <button class="btn-link" onclick="procesarSesion(${s.id}, '${encodeURIComponent(s.nombre)}')">
           Procesar Orden del Día
@@ -1490,7 +1533,6 @@ async function eliminarSesion(idSesion) {
 
 
 // Exponer funciones al DOM
-window.uploadOrden        = uploadOrden;
 window.confirmarOrden     = confirmarOrden;
 window.eliminarAsunto     = eliminarAsunto;
 window.guardarSesion      = guardarSesion;
@@ -1516,3 +1558,11 @@ window.descargarSesion = descargarSesion;
 window.editarSesion    = editarSesion;
 window.eliminarSesion  = eliminarSesion;
 window.filtrarSesiones = filtrarSesiones;
+// Para el nuevo flujo:
+window.subirOrden          = subirOrden;
+window.cargarSesionesSubidas = cargarSesionesSubidas;
+window.procesarSesion      = procesarSesion;
+window.filtrarListaSesiones = filtrarListaSesiones;
+
+// (opcional) por compatibilidad temporal:
+window.uploadOrden = subirOrden;
