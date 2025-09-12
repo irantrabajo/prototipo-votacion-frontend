@@ -115,6 +115,8 @@ async function subirOrden() {
   const archivo = input.files[0];
   const fd = new FormData();
   fd.append('orden', archivo);
+  fd.append('original_name', archivo.name);                       // 👈 nombre real
+  fd.append('nombre_sesion', basenameNoExt(archivo.name));        // 👈 sugerencia
 
   try {
     const res = await fetch(`${backend}/api/orden`, {
@@ -124,13 +126,23 @@ async function subirOrden() {
     });
     if (!res.ok) throw new Error(await res.text());
 
-    // ✅ Aviso y precarga lista para la pestaña "Sesión"
+    // Guarda el nombre para usarlo luego en Confirmar Orden y Resultados
+    sessionStorage.setItem('sesion_nombre_original', basenameNoExt(archivo.name));
+
     document.getElementById('msgOrden')?.classList.remove('hidden');
     await cargarSesionesSubidas();
   } catch (e) {
     console.error('subirOrden:', e);
     alert('No se pudo subir la Orden del Día.');
   }
+}
+
+let SESIONES_LISTA = []; // ← la usas en cargarSesionesSubidas / filtrarListaSesiones
+
+function basenameNoExt(filename='') {
+  const name = filename.split('/').pop().split('\\').pop();
+  const i = name.lastIndexOf('.');
+  return i > 0 ? name.slice(0, i) : name;
 }
 
 // 👇 Mostrar solo sesiones de los últimos N días en la lista "Sesiones subidas"
@@ -200,24 +212,27 @@ function pintarListaSesiones(sesiones) {
     return;
   }
 
-  tb.innerHTML = sesiones.map(s => `
-    <tr>
-      <td class="siglas">${s.creado_por ?? '—'}</td>
-      <td class="nombre-sesion">${s.nombre}</td>
-      <td class="fecha">${_formatoFecha(s.fecha || s.created_at || s.f_creacion || s.fecha_creacion)}</td>
-      <td class="acciones">
-        <button class="btn-link" onclick="procesarSesion(${s.id}, '${encodeURIComponent(s.nombre)}')">
-          Procesar Orden del Día
-        </button>
-      </td>
-    </tr>
-  `).join('');
+  tb.innerHTML = sesiones.map(s => {
+    const nombreVis = s.original_name || s.nombre || '—'; // 👈 preferir nombre real
+    return `
+      <tr>
+        <td class="siglas">${s.creado_por ?? '—'}</td>
+        <td class="nombre-sesion">${nombreVis}</td>
+        <td class="fecha">${_formatoFecha(s.fecha || s.created_at || s.f_creacion || s.fecha_creacion)}</td>
+        <td class="acciones">
+          <button class="btn-link" onclick="procesarSesion(${s.id}, '${encodeURIComponent(nombreVis)}')">
+            Procesar Orden del Día
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function filtrarListaSesiones() {
   const q = (document.getElementById('buscadorSes')?.value || '').toLowerCase();
   const filtradas = SESIONES_LISTA.filter(s =>
-    (s.nombre || '').toLowerCase().includes(q) ||
+    (s.original_name || s.nombre || '').toLowerCase().includes(q) ||
     (s.creado_por || '').toLowerCase().includes(q)
   );
   pintarListaSesiones(filtradas);
@@ -304,7 +319,11 @@ function toRoman(num) {
 // Confirmar Orden: crear sesión + asuntos (bulk)
 // —————————————————————————
 async function confirmarOrden() {
-  const baseNombre = document.getElementById('previewSesion').innerText.replace('Sesión: ', '').trim();
+  const baseNombre =
+    sessionStorage.getItem('sesion_nombre_original') || // prioridad: nombre del PDF (sin .pdf)
+    document.getElementById('previewSesion').innerText.replace('Sesión: ', '').trim() ||
+    'Sesión';
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const sesionTxt = `${baseNombre} — ${timestamp}`;
 
@@ -355,11 +374,10 @@ async function confirmarOrden() {
   }
 
   updateResultadosLinkVisibility();
-
   sessionStorage.setItem(K_ASUNTO_CNT, String(asuntos.length));
   VOTADOS.clear();
   const busc = document.getElementById('buscadorDiputado');
-if (busc) busc.value = '';
+  if (busc) busc.value = '';
   showSection('diputados');
   cargarDiputados();
 }
@@ -843,7 +861,7 @@ function _formatoFecha(f) {
 
 function _rowSesionHTML(s) {
   const usuario  = s.usuario || s.creado_por || s.user || '—';
-  const nombre   = s.nombre || s.sesion || '—';
+  const nombre   = s.original_name || s.nombre || s.sesion || '—'; // 👈 preferir original_name
   const fechaRaw = s.fecha || s.created_at || s.f_creacion || s.fecha_creacion;
   const fecha    = _formatoFecha(fechaRaw);
 
