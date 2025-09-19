@@ -1548,6 +1548,46 @@ async function eliminarSesion(idSesion) {
   }
 }
 
+// Renombrar botón y enganchar click
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('iniciarBtn');
+  if (btn) {
+    btn.textContent = 'Iniciar Sesión';
+    btn.addEventListener('click', iniciarSesionDesdeSelect);
+  }
+});
+
+// Iniciar Sesión desde el <select> de asuntos
+function iniciarSesionDesdeSelect() {
+  const sid = sessionStorage.getItem(K_SID);
+  const sel = document.getElementById('listaAsuntos');
+  const aid = sel?.value || null;
+  const aname = sel?.selectedOptions?.[0]?.text || '';
+
+  if (!sid || !aid) {
+    alert('Selecciona un asunto antes de continuar.');
+    return;
+  }
+
+  sessionStorage.setItem(K_AID, String(aid));
+  sessionStorage.setItem(K_ANAME, aname);
+  actualizarAsuntoActual();
+
+  VOTADOS.clear();
+  const busc = document.getElementById('buscadorDiputado');
+  if (busc) busc.value = '';
+
+  showSection('diputados');
+  cargarDiputados();
+}
+
+// Útil para depurar desde la consola
+Object.defineProperties(window, {
+  sesion_id: { get: ()=>sessionStorage.getItem(K_SID) },
+  asunto_id: { get: ()=>sessionStorage.getItem(K_AID) },
+});
+
+
 
 
 // Exponer funciones al DOM
