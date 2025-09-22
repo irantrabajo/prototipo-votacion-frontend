@@ -84,6 +84,22 @@
       <button onclick="iniciarApp()">Comenzar</button>
     </section>
 
+    <!-- 0.1) Confirmar Orden del Día (previa editable) -->
+  <section id="confirmarOrden" class="hidden">
+    <h2>🧾 Orden detectada</h2>
+    <p id="previewSesion" style="margin:.4rem 0 1rem; font-weight:600; color:#800000;">
+      Sesión:
+    </p>
+
+    <ol id="previewAsuntos" class="lista-asuntos"></ol>
+
+  <div class="actions" style="margin-top:12px;">
+    <button onclick="confirmarOrden()">✔️ Confirmar Orden</button>
+    <button onclick="showSection('uploadOrden')">↩️ Volver</button>
+  </div>
+</section>
+
+
     <!-- 2) Sesión -->
     <section id="sesion" class="hidden">
       <h2>🗃️ Sesiones subidas</h2>
@@ -99,10 +115,10 @@
         <table class="tabla-sesiones">
           <thead>
             <tr>
-              <th style="width:140px;">Usuario/ID</th>
-              <th>Sesión / Orden del día</th>
-              <th style="width:190px;">Fecha</th>
-              <th style="width:180px;">Acción</th>
+              <th style="width:140px; text-align:left;">Usuario/ID</th>
+              <th style="text-align:left;">Sesión / Orden del día</th>
+              <th style="width:190px; text-align:left;">Fecha</th>
+              <th style="width:180px; text-align:left;">Acción</th>
             </tr>
           </thead>
           <tbody id="tbodyListaSesiones">

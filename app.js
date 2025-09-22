@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // —————————————————————————
 let listaAsuntos = [];
 
-// ====== ORDEN DEL DÍA: solo SUBIR ======
+// ====== ORDEN DEL DÍA: SUBIR + PREVIA ======
 async function subirOrden() {
   const input = document.getElementById('fileOrden');
   if (!input?.files?.length) return alert('Selecciona un PDF.');
@@ -115,8 +115,8 @@ async function subirOrden() {
   const archivo = input.files[0];
   const fd = new FormData();
   fd.append('orden', archivo);
-  fd.append('original_name', archivo.name);                       // 👈 nombre real
-  fd.append('nombre_sesion', basenameNoExt(archivo.name));        // 👈 sugerencia
+  fd.append('original_name', archivo.name);                // nombre real del PDF
+  fd.append('nombre_sesion', basenameNoExt(archivo.name)); // sugerencia de sesión
 
   try {
     const res = await fetch(`${backend}/api/orden`, {
@@ -126,11 +126,34 @@ async function subirOrden() {
     });
     if (!res.ok) throw new Error(await res.text());
 
-    // Guarda el nombre para usarlo luego en Confirmar Orden y Resultados
-    sessionStorage.setItem('sesion_nombre_original', basenameNoExt(archivo.name));
+    // 👇 El backend responde JSON: { original_name, nombreOriginal?, asuntos: [...] }
+    const data = await res.json();
 
+    // Guarda nombre para futuros exports
+    const nombreReal = data.original_name || basenameNoExt(archivo.name);
+    sessionStorage.setItem('sesion_nombre_original', nombreReal);
+
+    // Normaliza los asuntos por si vienen como objetos o strings
+    listaAsuntos = Array.isArray(data.asuntos)
+      ? data.asuntos.map(a =>
+          typeof a === 'string' ? a : (a?.asunto ?? a?.texto ?? a?.titulo ?? '')
+        ).filter(Boolean)
+      : [];
+
+    // Pinta previa
+    const p = document.getElementById('previewSesion');
+    if (p) p.innerText = `Sesión: ${data.nombreOriginal || nombreReal}`;
+    renderizarAsuntos();
+
+    // Muestra la vista de confirmación
+    showSection('confirmarOrden');
+    document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Aviso de éxito en la sección de subida (opcional)
     document.getElementById('msgOrden')?.classList.remove('hidden');
-    await cargarSesionesSubidas();
+
+    // Refresca listado de sesiones en segundo plano (opcional)
+    cargarSesionesSubidas().catch(() => {});
   } catch (e) {
     console.error('subirOrden:', e);
     alert('No se pudo subir la Orden del Día.');
@@ -277,6 +300,7 @@ async function cargarAsuntosDeSesion(sesionId) {
 // —————————————————————————
 function renderizarAsuntos() {
   const ul = document.getElementById('previewAsuntos');
+  if (!ul) return; 
   ul.innerHTML = '';
 
   listaAsuntos.forEach((texto, i) => {
@@ -817,12 +841,23 @@ function showSection(id) {
     }
   }
 
-  // Mostrar/ocultar secciones
-  ['uploadOrden','sesion','asunto','diputados','resultados','historial','sesionesPasadas','vistaEdicion']
-    .forEach(s => {
-      const el = document.getElementById(s);
-      if (el) el.classList.toggle('hidden', s !== id);
-    });
+  // 👇 AQUI ESTÁ LA CLAVE: incluye 'confirmarOrden'
+  const secciones = [
+    'uploadOrden',
+    'confirmarOrden',
+    'sesion',
+    'asunto',
+    'diputados',
+    'resultados',
+    'historial',
+    'sesionesPasadas',
+    'vistaEdicion'
+  ];
+
+  secciones.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.classList.toggle('hidden', s !== id);
+  });
 
   document.querySelector('.sidebar').style.display = 'block';
 
@@ -836,11 +871,10 @@ function showSection(id) {
   if (id === 'diputados') {
     setTimeout(hookSearchShortcuts, 0);
     actualizarAsuntoActual();
-}
-if (id === 'sesion') {
-  cargarSesionesSubidas();
-}
-
+  }
+  if (id === 'sesion') {
+    cargarSesionesSubidas();
+  }
 }
 // —————————————————————————
 // Sesiones pasadas / edición simple
@@ -1581,11 +1615,6 @@ function iniciarSesionDesdeSelect() {
   cargarDiputados();
 }
 
-// Útil para depurar desde la consola
-Object.defineProperties(window, {
-  sesion_id: { get: ()=>sessionStorage.getItem(K_SID) },
-  asunto_id: { get: ()=>sessionStorage.getItem(K_AID) },
-});
 
 
 
