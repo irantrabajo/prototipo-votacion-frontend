@@ -115,8 +115,8 @@ async function subirOrden() {
   const archivo = input.files[0];
   const fd = new FormData();
   fd.append('orden', archivo);
-  fd.append('original_name', archivo.name);                // nombre real del PDF
-  fd.append('nombre_sesion', basenameNoExt(archivo.name)); // sugerencia de sesión
+  fd.append('original_name', archivo.name);
+  fd.append('nombre_sesion', basenameNoExt(archivo.name));
 
   try {
     const res = await fetch(`${backend}/api/orden`, {
@@ -126,33 +126,13 @@ async function subirOrden() {
     });
     if (!res.ok) throw new Error(await res.text());
 
-    // 👇 El backend responde JSON: { original_name, nombreOriginal?, asuntos: [...] }
     const data = await res.json();
-
-    // Guarda nombre para futuros exports
     const nombreReal = data.original_name || basenameNoExt(archivo.name);
     sessionStorage.setItem('sesion_nombre_original', nombreReal);
 
-    // Normaliza los asuntos por si vienen como objetos o strings
-    listaAsuntos = Array.isArray(data.asuntos)
-      ? data.asuntos.map(a =>
-          typeof a === 'string' ? a : (a?.asunto ?? a?.texto ?? a?.titulo ?? '')
-        ).filter(Boolean)
-      : [];
-
-    // Pinta previa
-    const p = document.getElementById('previewSesion');
-    if (p) p.innerText = `Sesión: ${data.nombreOriginal || nombreReal}`;
-    renderizarAsuntos();
-
-    // Muestra la vista de confirmación
-    showSection('confirmarOrden');
-    document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // Aviso de éxito en la sección de subida (opcional)
+    // Solo mensaje y nos vamos a “Sesión”
     document.getElementById('msgOrden')?.classList.remove('hidden');
-
-    // Refresca listado de sesiones en segundo plano (opcional)
+    showSection('sesion');
     cargarSesionesSubidas().catch(() => {});
   } catch (e) {
     console.error('subirOrden:', e);
@@ -266,8 +246,36 @@ async function procesarSesion(sesionId, nombreCodificado) {
   sessionStorage.setItem(K_SID, sesionId);
   sessionStorage.setItem(K_SNAME, nombre);
 
-  // carga asuntos para continuar con la votación
-  await cargarAsuntosDeSesion(sesionId);
+  // Trae los asuntos de esa sesión y arma la lista para la previa
+  try {
+    const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
+    const asuntos = await r.json();
+    listaAsuntos = (Array.isArray(asuntos) ? asuntos : [])
+      .map(a => typeof a === 'string' ? a : (a?.asunto ?? a?.texto ?? a?.titulo ?? ''))
+      .filter(Boolean);
+  } catch (e) {
+    console.error('procesarSesion:', e);
+    listaAsuntos = [];
+  }
+
+  // Pinta encabezado + lista
+  const p = document.getElementById('previewSesion');
+  if (p) p.innerText = `Sesión: ${nombre}`;
+  renderizarAsuntos();
+
+  // Reconfigura el botón “Confirmar Orden” para solo continuar con esa sesión
+  const btnConfirm = document.querySelector('#confirmarOrden .actions button:first-child');
+  // dentro de procesarSesion, después de asignar btnConfirm.onclick…
+if (btnConfirm) btnConfirm.textContent = 'Continuar';
+  
+
+  showSection('confirmarOrden');
+  document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Continúa: llena select y pasa a “asunto”
+async function continuarConSesion(sid) {
+  await cargarAsuntosDeSesion(sid); // esto ya setea K_AID/K_ANAME y el select
   showSection('asunto');
 }
 
