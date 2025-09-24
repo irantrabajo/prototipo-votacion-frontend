@@ -259,45 +259,39 @@ async function procesarSesion(sesionId, nombreCodificado) {
   try {
     const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
     const raw = await r.json();
-
-    // Normaliza a objetos {id, asunto}
-    asuntos = (Array.isArray(raw) ? raw : [])
-      .map(a => (typeof a === 'string'
+    asuntos = (Array.isArray(raw) ? raw : []).map(a =>
+      (typeof a === 'string')
         ? { id: null, asunto: a }
-        : { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' }))
-      .filter(x => x.asunto);
+        : { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' }
+    ).filter(x => x.asunto);
   } catch (e) {
     console.error('procesarSesion:', e);
+  }
+
+  // 1.1) FALLBACK: si la BD no tiene asuntos aún, usa los detectados al subir
+  if (!asuntos.length) {
+    const tmp = JSON.parse(sessionStorage.getItem('asuntos_detectados_tmp') || '[]');
+    if (Array.isArray(tmp) && tmp.length) {
+      asuntos = tmp.map(t => ({ id: null, asunto: String(t) }));
+    }
   }
 
   // 2) Guarda para navegación posterior
   sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
   sessionStorage.setItem('asunto_index', '0');
 
-  // 3) PREVIA: pinta encabezado + lista (para eliminar/confirmar)
-  const p = document.getElementById('previewSesion');
-  if (p) p.innerText = `Sesión: ${nombre}`;
+  // 3) Previa: encabezado + LISTA
+  document.getElementById('previewSesion')?.innerText = `Sesión: ${nombre}`;
+  listaAsuntos = asuntos.map(a => a.asunto); // <- alimentar la global que pinta la <ol>
+  renderizarAsuntos();                        // <- llena #previewAsuntos
 
-  // 👉 alimentar la previa
-  listaAsuntos = asuntos.map(a => a.asunto);
-  renderizarAsuntos(); // <- llena #previewAsuntos
-
-  // 4) Llena el <select> de la vista "Asunto" (por si decides continuar)
+  // 4) Llena el <select> de "Asunto"
   const sel = document.getElementById('listaAsuntos');
   if (sel) {
-    sel.innerHTML = asuntos.map(a =>
-      `<option value="${a.id ?? ''}">${a.asunto}</option>`
-    ).join('');
+    sel.innerHTML = asuntos.map(a => `<option value="${a.id ?? ''}">${a.asunto}</option>`).join('');
   }
 
-  // 5) Botón “Confirmar Orden” → continuar a la vista "Asunto"
-  const btnConfirm = document.querySelector('#confirmarOrden .actions button:first-child');
-  if (btnConfirm) {
-    btnConfirm.textContent = '✔️ Confirmar Orden';
-    btnConfirm.onclick = () => showSection('asunto');
-  }
-
-  // 6) Mostrar la PREVIA (no saltar a "asunto" todavía)
+  // 5) Mostrar la PREVIA (no saltes a "asunto" todavía)
   showSection('confirmarOrden');
   document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
