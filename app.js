@@ -260,39 +260,44 @@ async function procesarSesion(sesionId, nombreCodificado) {
     const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
     const raw = await r.json();
 
-    // Normaliza: objetos {id, asunto} o strings → a objetos
-    asuntos = (Array.isArray(raw) ? raw : []).map(a => {
-      if (typeof a === 'string') return { id: null, asunto: a };
-      return { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' };
-    }).filter(x => x.asunto);
+    // Normaliza a objetos {id, asunto}
+    asuntos = (Array.isArray(raw) ? raw : [])
+      .map(a => (typeof a === 'string'
+        ? { id: null, asunto: a }
+        : { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' }))
+      .filter(x => x.asunto);
   } catch (e) {
     console.error('procesarSesion:', e);
   }
 
-  // Guarda para navegación posterior
+  // 2) Guarda para navegación posterior
   sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
   sessionStorage.setItem('asunto_index', '0');
 
-  // 2) Llena el <select> de la sección "Asunto"
+  // 3) PREVIA: pinta encabezado + lista (para eliminar/confirmar)
+  const p = document.getElementById('previewSesion');
+  if (p) p.innerText = `Sesión: ${nombre}`;
+
+  // 👉 alimentar la previa
+  listaAsuntos = asuntos.map(a => a.asunto);
+  renderizarAsuntos(); // <- llena #previewAsuntos
+
+  // 4) Llena el <select> de la vista "Asunto" (por si decides continuar)
   const sel = document.getElementById('listaAsuntos');
   if (sel) {
-    sel.innerHTML = asuntos.map(a => 
+    sel.innerHTML = asuntos.map(a =>
       `<option value="${a.id ?? ''}">${a.asunto}</option>`
     ).join('');
   }
 
-  // 3) Pinta encabezado de la previa
-  const p = document.getElementById('previewSesion');
-  if (p) p.innerText = `Sesión: ${nombre}`;
-
-  // 4) Botón "Continuar" → ir a la sección "Asunto"
+  // 5) Botón “Confirmar Orden” → continuar a la vista "Asunto"
   const btnConfirm = document.querySelector('#confirmarOrden .actions button:first-child');
   if (btnConfirm) {
-    btnConfirm.textContent = 'Continuar';
+    btnConfirm.textContent = '✔️ Confirmar Orden';
     btnConfirm.onclick = () => showSection('asunto');
   }
 
-  // 5) Mostrar la previa (sin lista aquí; la lista vive en "Asunto")
+  // 6) Mostrar la PREVIA (no saltar a "asunto" todavía)
   showSection('confirmarOrden');
   document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
