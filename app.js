@@ -127,10 +127,18 @@ async function subirOrden() {
     if (!res.ok) throw new Error(await res.text());
 
     const data = await res.json();
+
     const nombreReal = data.original_name || basenameNoExt(archivo.name);
     sessionStorage.setItem('sesion_nombre_original', nombreReal);
 
-    // Solo mensaje y nos vamos a “Sesión”
+    // guarda los asuntos detectados para usarlos luego si la sesión aún no tiene asuntos
+    const detectados = Array.isArray(data.asuntos)
+      ? data.asuntos.map(a => typeof a === 'string' ? a : (a?.asunto ?? a?.texto ?? a?.titulo ?? ''))
+                    .filter(Boolean)
+      : [];
+    sessionStorage.setItem('asuntos_detectados_tmp', JSON.stringify(detectados));
+
+    // Mensaje + nos vamos a Sesión
     document.getElementById('msgOrden')?.classList.remove('hidden');
     showSection('sesion');
     cargarSesionesSubidas().catch(() => {});
@@ -246,29 +254,45 @@ async function procesarSesion(sesionId, nombreCodificado) {
   sessionStorage.setItem(K_SID, sesionId);
   sessionStorage.setItem(K_SNAME, nombre);
 
-  // Trae los asuntos de esa sesión y arma la lista para la previa
+  // 1) Traer asuntos del backend
+  let asuntos = [];
   try {
     const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
-    const asuntos = await r.json();
-    listaAsuntos = (Array.isArray(asuntos) ? asuntos : [])
-      .map(a => typeof a === 'string' ? a : (a?.asunto ?? a?.texto ?? a?.titulo ?? ''))
-      .filter(Boolean);
+    const raw = await r.json();
+
+    // Normaliza: objetos {id, asunto} o strings → a objetos
+    asuntos = (Array.isArray(raw) ? raw : []).map(a => {
+      if (typeof a === 'string') return { id: null, asunto: a };
+      return { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' };
+    }).filter(x => x.asunto);
   } catch (e) {
     console.error('procesarSesion:', e);
-    listaAsuntos = [];
   }
 
-  // Pinta encabezado + lista
+  // Guarda para navegación posterior
+  sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
+  sessionStorage.setItem('asunto_index', '0');
+
+  // 2) Llena el <select> de la sección "Asunto"
+  const sel = document.getElementById('listaAsuntos');
+  if (sel) {
+    sel.innerHTML = asuntos.map(a => 
+      `<option value="${a.id ?? ''}">${a.asunto}</option>`
+    ).join('');
+  }
+
+  // 3) Pinta encabezado de la previa
   const p = document.getElementById('previewSesion');
   if (p) p.innerText = `Sesión: ${nombre}`;
-  renderizarAsuntos();
 
-  // Reconfigura el botón “Confirmar Orden” para solo continuar con esa sesión
+  // 4) Botón "Continuar" → ir a la sección "Asunto"
   const btnConfirm = document.querySelector('#confirmarOrden .actions button:first-child');
-  // dentro de procesarSesion, después de asignar btnConfirm.onclick…
-if (btnConfirm) btnConfirm.textContent = 'Continuar';
-  
+  if (btnConfirm) {
+    btnConfirm.textContent = 'Continuar';
+    btnConfirm.onclick = () => showSection('asunto');
+  }
 
+  // 5) Mostrar la previa (sin lista aquí; la lista vive en "Asunto")
   showSection('confirmarOrden');
   document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
