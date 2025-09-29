@@ -126,15 +126,12 @@ button:focus {
   flex-shrink: 0;
   margin-top: 0.2rem; /* centrado fino */
 }
-.asunto-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  width: 100%;
-  gap: 0.75rem;
-  align-items: center; /* ← centra verticalmente */
-  min-height: 60px; /* ← asegura altura pareja */
+
+.asunto-item{
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: start;
+  gap: .6rem;
 }
 
 .caja-asunto {
@@ -985,3 +982,63 @@ body {
 }
 
 #buscadorSesiones::placeholder{ color: rgba(128,0,0,0.6); }
+
+/* Tarjetita bonita para cada asunto en la previa */
+.asunto-item{
+  background:#fff;
+  border:1px solid #f0dcdc;
+  border-radius:12px;
+  padding:12px 14px;
+  box-shadow:0 4px 12px rgba(128,0,0,.06);
+}
+
+/* Punto rojo de guía */
+.punto-rojo{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background:#800000;
+  margin-top:.55rem;
+}
+
+/* Texto del asunto */
+.caja-asunto{
+  color:#2b2b2b;
+  background: #fff;         /* más limpio que semitransparente */
+  padding: 0;
+  border-radius: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  min-width:0;
+  white-space: normal;
+  overflow-wrap:anywhere;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Botón de eliminar compacto */
+#previewAsuntos .asunto-item > button{
+  background:transparent;
+  color:#c83b3b;
+  border:1px solid #f4c7c7;
+  border-radius:10px;
+  padding:6px 10px;
+  font-size:18px;
+  width:auto !important;
+}
+#previewAsuntos .asunto-item > button:hover{
+  background:#ffecec;
+  transform: none;
+  box-shadow:none;
+}
+
+#previewAsuntos{
+  list-style:none;
+  padding:0;
+  margin:12px auto;
+  max-width:100%;
+  display:grid;
+  gap:10px;
+  text-align:left;
+}
+li.asunto-item{ list-style:none; }

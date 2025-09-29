@@ -84,17 +84,20 @@
       <button onclick="iniciarApp()">Comenzar</button>
     </section>
 
-    <!-- 0.1) Confirmar Orden del Día (previa editable) -->
-  <section id="confirmarOrden" class="hidden">
-    <h2>🧾 Orden detectada</h2>
-    <p id="previewSesion" style="margin:.4rem 0 1rem; font-weight:600; color:#800000;">
-      Sesión:
-    </p>
+   <!-- 0.1) Confirmar Orden del Día (previa editable) -->
+<section id="confirmarOrden" class="hidden">
+  <h2>🧾 Orden detectada</h2>
 
-    <ol id="previewAsuntos" class="lista-asuntos"></ol>
+  <p id="previewSesion" style="margin:.4rem 0 1rem; font-weight:600; color:#800000;">
+    Sesión:
+  </p>
+
+  <!-- LISTA DE ASUNTOS EDITABLE -->
+  <ol id="previewAsuntos" class="lista-asuntos"></ol>
 
   <div class="actions" style="margin-top:12px;">
-    <button onclick="confirmarOrden()">✔️ Confirmar Orden</button>
+    <!-- 👉 Botón único que confirma e inicia la votación -->
+    <button class="full" onclick="confirmarOrden()">✅ Confirmar e iniciar votación</button>
     <button onclick="showSection('uploadOrden')">↩️ Volver</button>
   </div>
 </section>
