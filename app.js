@@ -256,36 +256,50 @@ function filtrarListaSesiones() {
 }
 
 async function procesarSesion(sesionId, nombreCodificado) {
+  const nombre = decodeURIComponent(nombreCodificado || '');
+  sessionStorage.setItem(K_SID, sesionId);
+  sessionStorage.setItem(K_SNAME, nombre);
+
+  // 1) Traer asuntos del backend
+  let asuntos = [];
   try {
-    SESION_ID = sesionId;
-    SESION_NOMBRE = decodeURIComponent(nombreCodificado || '');
-    sessionStorage.setItem(K_SID, SESION_ID);
-    sessionStorage.setItem(K_SNAME, SESION_NOMBRE);
-
-    // 1) Traer asuntos de la BD (con ids)
-    const r = await fetch(`${backend}/api/asuntos?sesion_id=${SESION_ID}`);
-    let asuntos = await r.json(); // [{id, asunto}, ...]
-
-    // 1.1) Fallback: si viniera vacío, usa detectados al subir
-    if (!Array.isArray(asuntos) || !asuntos.length) {
-      const tmp = JSON.parse(sessionStorage.getItem('asuntos_detectados_tmp') || '[]');
-      asuntos = (tmp || []).map(t => ({ id: null, asunto: String(t) }));
-    }
-
-    // 2) Guardar original + editable
-    ASUNTOS_ORIG = (asuntos || []).map(a => ({ id: a.id ?? null, asunto: a.asunto ?? '' }));
-    ASUNTOS_EDIT = ASUNTOS_ORIG.map(a => ({ ...a })); // copia para editar
-
-    // 3) Pintar la previa editable y mostrar sección
-    renderizarPreviaAsuntos();
-    showSection('confirmarOrden');
-    document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
+    const raw = await r.json();
+    asuntos = (Array.isArray(raw) ? raw : [])
+      .map(a => (typeof a === 'string')
+        ? { id: null, asunto: a }
+        : { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' })
+      .filter(x => x.asunto);
   } catch (e) {
     console.error('procesarSesion:', e);
-    alert('Error cargando asuntos de la sesión.');
   }
-}
 
+  // 1.1) Fallback: si la BD aún no tiene asuntos, usa los detectados al subir
+  if (!asuntos.length) {
+    const tmp = JSON.parse(sessionStorage.getItem('asuntos_detectados_tmp') || '[]');
+    if (Array.isArray(tmp) && tmp.length) {
+      asuntos = tmp.map(t => ({ id: null, asunto: String(t) }));
+    }
+  }
+
+  // 2) Guarda para navegación posterior (select / siguiente asunto)
+  sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
+  sessionStorage.setItem('asunto_index', '0');
+
+  // 3) Encabezado de la previa + LISTA EDITABLE con ❌ y números romanos
+  const p = document.getElementById('previewSesion');
+  if (p) p.innerText = `Sesión: ${nombre}`;
+  listaAsuntos = asuntos.map(a => a.asunto);
+  renderizarAsuntos(); // 👈 AQUÍ se dibuja la lista que quieres
+
+  // (Opcional) también llenamos el select por compatibilidad
+  const sel = document.getElementById('listaAsuntos');
+  if (sel) sel.innerHTML = asuntos.map(a => `<option value="${a.id ?? ''}">${a.asunto}</option>`).join('');
+
+  // 4) Mostrar la previa “confirmarOrden”
+  showSection('confirmarOrden');
+  document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 // Continúa: llena select y pasa a “asunto”
 async function continuarConSesion(sid) {
