@@ -613,3 +613,53 @@ header nav, header nav a,
 
 /* Los links del sidebar mantienen guinda */
 .sidebar .side-link{ color:var(--guinda); }
+
+/* Título de la vista de votación */
+#diputados h2{ color: var(--guinda); }
+
+/* Banner del asunto en la vista de diputados */
+#asuntoActual{ color:#222 !important; font-weight:600; }
+
+/* Encabezado del sidebar */
+.sidebar h2{ color:var(--guinda); }
+
+/* El texto largo del asunto en Resultados debe ir negro, no guinda */
+#resumenSesion .card .section-title + div{ color:#222; font-weight:600; }
+
+
+.longtext{ color:#222; font-weight:600; }
+
+/* Título de la iniciativa (era guinda, ahora negro) */
+#vista-iniciativa h3{ color:#222; font-weight:800; }
+
+/* === Flip guinda ↔ negro (bloque canónico) === */
+
+/* 1) Títulos que quieres en guinda */
+#diputados h2,
+.sidebar h2{
+  color: var(--guinda);
+}
+
+/* 2) Banner “Asunto en votación …” en negro y marcado */
+#asuntoActual{
+  color:#222 !important;
+  font-family:'Merriweather', serif;
+  font-weight:700;
+  line-height:1.35;
+}
+
+/* 3) Resultados: texto largo (Sesión / Asunto) en negro */
+#resumenSesion .card .section-title + div,
+.longtext{
+  color:#222 !important;
+  font-family:'Merriweather', serif;
+  font-weight:700;
+  line-height:1.45;
+}
+
+/* 4) Vista Iniciativa: el gran título en negro */
+#vista-iniciativa h3{
+  color:#222;
+  font-weight:800;
+}
+
