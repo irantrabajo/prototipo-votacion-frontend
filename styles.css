@@ -526,3 +526,43 @@
    .sidebar .side-link { color: var(--guinda) !important; }
    .sidebar h2 { color: var(--guinda); }
    
+
+   /* === Ajustes finos pedidos === */
+
+/* 1) Botones del sidebar (texto negro) */
+.side-link {
+  color: #222 !important;
+  font-weight: 600;
+}
+.sidebar h2 { color: var(--guinda) !important; } /* el título sigue en guinda */
+
+/* 2) En Confirmar Orden: “Sesión: …” en negro */
+#previewSesion {
+  color: #222 !important;
+  font-weight: 700 !important;
+  font-family: "Merriweather", serif;
+}
+
+/* 3) Lista de comisiones en guinda */
+.lista-comisiones label,
+#com-lista label {
+  color: var(--guinda) !important;
+  font-weight: 600;
+}
+#com-lista input[type="checkbox"],
+.lista-comisiones input[type="checkbox"] {
+  accent-color: var(--guinda);
+}
+
+/* 4) Botón “Siguiente asunto” en guinda (y el de notas también) */
+#ini-siguiente,
+#nota-siguiente {
+  background: var(--guinda) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px;
+}
+#ini-siguiente:hover,
+#nota-siguiente:hover {
+  background: #a00000 !important;
+}
