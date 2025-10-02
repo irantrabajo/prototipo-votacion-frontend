@@ -24,7 +24,7 @@
 
   <div id="particles-js"></div>
 
-  <!-- 🔐 LOGIN PAGE -->
+  <!-- LOGIN PAGE -->
   <div class="login-page">
     <section id="login">
       <div class="login-container">
@@ -32,14 +32,14 @@
           Dirección de Enlace Legislativo<br>
           <span>Sistema de Votación Parlamentaria</span>
         </h1>
-        <h2>🔐 Iniciar Sesión</h2>
+        <h2> Iniciar Sesión</h2>
         <form id="loginForm" onsubmit="event.preventDefault(); login();">
           <label for="usuarioLogin">Usuario</label>
           <input type="text" id="usuarioLogin" required />
           <label for="passwordLogin">Contraseña</label>
           <input type="password" id="passwordLogin" required />
           <button type="submit">Ingresar</button>
-          <p id="loginError" class="hidden error">⚠️ Usuario o contraseña incorrectos.</p>
+          <p id="loginError" class="hidden error"> Usuario o contraseña incorrectos.</p>
         </form>
         <p class="olvido">
           ¿Olvidaste tu contraseña?
@@ -49,7 +49,7 @@
     </section>
   </div>
 
-  <!-- 📦 MAIN APP (se muestra después de login) -->
+  <!--  MAIN APP (se muestra después de login) -->
   <div class="sidebar hidden">
     <h2>🗳️ Votación</h2>
     <button type="button" class="side-link" onclick="showSection('uploadOrden')">
@@ -103,7 +103,7 @@
   <ol id="previewAsuntos" class="lista-asuntos"></ol>
 
   <div class="actions" style="margin-top:12px;">
-    <!-- 👉 Botón único que confirma e inicia la votación -->
+    <!-- 👉Botón único que confirma e inicia la votación -->
     <button class="full" onclick="confirmarOrden()">✅ Confirmar e iniciar votación</button>
     <button onclick="showSection('uploadOrden')">↩️ Volver</button>
   </div>
@@ -282,6 +282,8 @@
     <div id="votosPrevios">Selecciona una sesión para ver el detalle.</div>
   </div>
 </section>
+
+<link rel="stylesheet" href="./styles.css?v=20251002b"/>
 
 
     <!-- 8) Terminar Sesión -->

@@ -359,307 +359,170 @@
      .tabla-sesiones .acciones{ gap:6px; }
      .tabla-sesiones .acciones .btn-link{ padding:7px 8px; font-size:.85rem; }
    }
-
+   
    /* === Confirmar Orden: lista de asuntos === */
-.lista-asuntos {
-  list-style: none;
-  padding-left: 0;
-  display: grid;
-  gap: .5rem;
-}
-.asunto-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-  background: #fff;
-  border: 1px solid #f0dcdc;
-  border-radius: 10px;
-  padding: .6rem .75rem;
-}
-.punto-rojo {
-  width: 10px; height: 10px; flex: 0 0 10px;
-  border-radius: 999px; background: #b00020;
-}
-.caja-asunto { flex: 1; line-height: 1.35; }
-.asunto-item .btn-open, .asunto-item .btn-del {
-  border-radius: 8px; padding: .35rem .6rem; font-weight: 600; cursor: pointer;
-}
-.asunto-item .btn-open { background: #800000; color: #fff; border: none; }
-.asunto-item .btn-del  { background: #fff; color: #a00000; border: 1px solid #f4c7c7; }
-
-.actions { display: flex; gap: .6rem; flex-wrap: wrap; }
-.actions .full { flex: 1 1 260px; }
-
-/* === Vista Iniciativa === */
-/* Checkboxes en guinda */
-#com-lista input[type="checkbox"],
-.lista-comisiones input[type="checkbox"]{
-  accent-color: var(--guinda);
-  width: 18px;
-  height: 18px;
-}
-#com-lista input[type="checkbox"]:focus,
-.lista-comisiones input[type="checkbox"]:focus{
-  outline: 2px solid #e5bcbc;
-  outline-offset: 2px;
-}
-
-#vista-iniciativa h3 { margin-top: 0; color: #800000; }
-#com-buscar {
-  width: 100%; max-width: 520px;
-  padding: .55rem .7rem; border: 2px solid #800000; border-radius: 10px;
-}
-.lista-comisiones label {
-  display: flex; align-items: center; gap: .5rem;
-  padding: .35rem .5rem; border-bottom: 1px dashed #eee;
-}
-.lista-comisiones label:last-child { border-bottom: none; }
-#ini-opinion {
-  width: 100%; max-width: 740px;
-  border: 1px solid #e8e0e0; border-radius: 8px; padding: .5rem .6rem;
-}
-#ini-guardar, #ini-siguiente {
-  background: #800000; color: #fff; border: none;
-  padding: .5rem .8rem; border-radius: 10px; font-weight: 600; cursor: pointer;
-}
-#ini-siguiente { background: #5b5b5b; }
-
-/* === Resultados: tarjetas & stats === */
-.card.soft {
-  background: #fff; border: 1px solid #f0dcdc; border-radius: 12px; padding: 1rem;
-}
-.section-title { font-weight: 700; color: #800000; }
-.stats {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: .5rem; margin-top: .6rem;
-}
-.stat {
-  background: #faf7f7; border: 1px solid #f0dcdc; border-radius: 10px;
-  padding: .6rem .5rem; text-align: center;
-}
-.stat .k { font-size: 1.4rem; font-weight: 700; }
-.stat .label { font-size: .9rem; color: #6b6b6b; }
-
-/* === Sesiones Pasadas: tabla & botones === */
-.tabla-sesiones th, .tabla-sesiones td {
-  border-bottom: 1px solid #f0dcdc; padding: .55rem .6rem;
-}
-.btn-link {
-  background: none; color: #800000; border: none; padding: 0;
-  cursor: pointer; text-decoration: underline; font-weight: 600;
-}
-.btn-danger { color: #a00000; }
-
-/* Utilidades */
-.hidden { display: none !important; }
-
-/* Responsive */
-@media (max-width: 640px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .asunto-item { align-items: flex-start; }
-}
-
-/* Links del sidebar como botones reales */
-.side-link {
-  display: block;
-  width: 100%;
-  background: transparent;
-  border: 0;
-  padding: .6rem .8rem;
-  text-align: left;
-  border-radius: 10px;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;      /* 👈 manita */
-  user-select: none;    /* evita la I de texto */
-}
-
-.side-link:hover { background: #f6e9e9; }
-.side-link:active { transform: translateY(1px); }
-
-/* (opcional) estilo del seleccionado si luego quieres marcarlo */
-.side-link.is-active,
-.side-link[aria-current="page"] {
-  background: #f4e6e6;
-  font-weight: 600;
-}
-
-#vista-nota textarea {
-  border: 1px solid #f0dcdc;
-  border-radius: 10px;
-  padding: .6rem .75rem;
-  font-family: inherit;
-  font-size: .95rem;
-  resize: vertical;
-}
-#vista-nota button {
-  background: #800000;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: .6rem .9rem;
-  cursor: pointer;
-}
-#vista-nota button:hover { filter: brightness(1.05); }
-
-
-/* Iniciativa: botón Siguiente en guinda */
-#ini-siguiente {
-  background: var(--guinda) !important;
-  color: #fff;
-}
-
-/* Resultados: por si acaso, fuerza guinda también */
-#botonSiguienteAsunto button,
-#botonTerminarSesion button {
-  background: var(--guinda);
-  color: #fff;
-}
-
-#botonSiguienteAsunto button:hover,
-#botonTerminarSesion button:hover {
-  background: #a00000;
-}
-
-/* Cuerpo de texto largo (gris, sin negritas) */
-.longtext{
-  color:#3a3a3a;          /* gris oscuro legible */
-  font-weight:500;        /* semibold suave, no bold */
-  line-height:1.45;
-}
-
-/* Títulos y números ya van en guinda; por coherencia: */
-.section-title,
-.stat .k { color: var(--guinda); }
-
-/* Botón gris de “siguiente” ya lo hiciste guinda; aseguramos hover */
-.btn-guinda{ background:var(--guinda); color:#fff; border:none; }
-.btn-guinda:hover{ background:#a00000; }
-
-/* === Vista Iniciativa === */
-#vista-iniciativa h3{
-  margin-top: 0;
-  color: #800000;
-  font-weight: 800;            /* ← ahora en negritas */
-  letter-spacing: .2px;
-}
-
-/* === Resultados: resalta sesión y asunto === */
-#resumenSesion .session-name,
-#resumenSesion .asunto-name{
-  font-weight: 700;            /* ← negritas */
-}
-
-
-/* ——— Sesión y Asunto (encabezados de contenido) ——— */
-.session-name,
-.asunto-name{
-  font-weight: 700;               /* negritas */
-  color: var(--guinda);
-  letter-spacing: .2px;
-}
-
-/* Por si en algún momento no se agregaran las clases,
-   fuerza negrita al primer DIV que sigue al .section-title dentro de .card */
-#resumenSesion .card .section-title + div{
-  font-weight: 700;
-  color: var(--guinda);
-}
-
-/* Menú superior con serif formal */
-.site-topbar,
-.site-topbar a{
-  font-family: "Merriweather", serif !important;
-  font-weight: 700;                 /* como en tu tercera captura */
-  letter-spacing: .2px;
-}
-
-/* Si el menú superior no tiene clase, puedes usar selectores comunes de navegación (ajusta según tu HTML real) */
-header nav, header nav a,
-.navbar, .navbar a, .main-menu a {
-  font-family: "Merriweather", serif;
-}
-
-/* --- FIX: textos largos en negro + Merriweather negrita --- */
-.longtext{
-  color:#2b2b2b !important;
-  font-family:'Merriweather', serif !important;
-  font-weight:700 !important;
-  line-height:1.45;
-}
-
-/* Debajo del título dentro de cada card (Sesión / Asunto) */
-#resumenSesion .card .section-title + div{
-  color:#2b2b2b !important;
-  font-family:'Merriweather', serif !important;
-  font-weight:700 !important;
-}
-
-/* Banner en la vista de Diputados */
-#asuntoActual{
-  color:#2b2b2b !important;
-  font-family:'Merriweather', serif !important;
-  font-weight:700 !important;
-}
-
-/* Menú superior (si es tuyo) en Merriweather */
-header nav, header nav a,
-.navbar, .navbar a, .main-menu a,
-.site-topbar, .site-topbar a{
-  font-family:'Merriweather', serif !important;
-  font-weight:700 !important;
-}
-
-/* Los links del sidebar mantienen guinda */
-.sidebar .side-link{ color:var(--guinda); }
-
-/* Título de la vista de votación */
-#diputados h2{ color: var(--guinda); }
-
-/* Banner del asunto en la vista de diputados */
-#asuntoActual{ color:#222 !important; font-weight:600; }
-
-/* Encabezado del sidebar */
-.sidebar h2{ color:var(--guinda); }
-
-/* El texto largo del asunto en Resultados debe ir negro, no guinda */
-#resumenSesion .card .section-title + div{ color:#222; font-weight:600; }
-
-
-.longtext{ color:#222; font-weight:600; }
-
-/* Título de la iniciativa (era guinda, ahora negro) */
-#vista-iniciativa h3{ color:#222; font-weight:800; }
-
-/* === Flip guinda ↔ negro (bloque canónico) === */
-
-/* 1) Títulos que quieres en guinda */
-#diputados h2,
-.sidebar h2{
-  color: var(--guinda);
-}
-
-/* 2) Banner “Asunto en votación …” en negro y marcado */
-#asuntoActual{
-  color:#222 !important;
-  font-family:'Merriweather', serif;
-  font-weight:700;
-  line-height:1.35;
-}
-
-/* 3) Resultados: texto largo (Sesión / Asunto) en negro */
-#resumenSesion .card .section-title + div,
-.longtext{
-  color:#222 !important;
-  font-family:'Merriweather', serif;
-  font-weight:700;
-  line-height:1.45;
-}
-
-/* 4) Vista Iniciativa: el gran título en negro */
-#vista-iniciativa h3{
-  color:#222;
-  font-weight:800;
-}
-
+   .lista-asuntos {
+     list-style: none;
+     padding-left: 0;
+     display: grid;
+     gap: .5rem;
+   }
+   .asunto-item {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: .75rem;
+     background: #fff;
+     border: 1px solid #f0dcdc;
+     border-radius: 10px;
+     padding: .6rem .75rem;
+   }
+   .punto-rojo {
+     width: 10px; height: 10px; flex: 0 0 10px;
+     border-radius: 999px; background: #b00020;
+   }
+   .caja-asunto { flex: 1; line-height: 1.35; }
+   .asunto-item .btn-open, .asunto-item .btn-del {
+     border-radius: 8px; padding: .35rem .6rem; font-weight: 600; cursor: pointer;
+   }
+   .asunto-item .btn-open { background: #800000; color: #fff; border: none; }
+   .asunto-item .btn-del  { background: #fff; color: #a00000; border: 1px solid #f4c7c7; }
+   
+   .actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+   .actions .full { flex: 1 1 260px; }
+   
+   /* === Vista Iniciativa === */
+   #com-lista input[type="checkbox"],
+   .lista-comisiones input[type="checkbox"]{
+     accent-color: var(--guinda);
+     width: 18px;
+     height: 18px;
+   }
+   #com-lista input[type="checkbox"]:focus,
+   .lista-comisiones input[type="checkbox"]:focus{
+     outline: 2px solid #e5bcbc;
+     outline-offset: 2px;
+   }
+   
+   #vista-iniciativa h3 { margin-top: 0; color: #800000; }
+   #com-buscar {
+     width: 100%; max-width: 520px;
+     padding: .55rem .7rem; border: 2px solid #800000; border-radius: 10px;
+   }
+   .lista-comisiones label {
+     display: flex; align-items: center; gap: .5rem;
+     padding: .35rem .5rem; border-bottom: 1px dashed #eee;
+   }
+   .lista-comisiones label:last-child { border-bottom: none; }
+   #ini-opinion {
+     width: 100%; max-width: 740px;
+     border: 1px solid #e8e0e0; border-radius: 8px; padding: .5rem .6rem;
+   }
+   #ini-guardar, #ini-siguiente {
+     background: #800000; color: #fff; border: none;
+     padding: .5rem .8rem; border-radius: 10px; font-weight: 600; cursor: pointer;
+   }
+   #ini-siguiente { background: #5b5b5b; }
+   
+   /* === Resultados: tarjetas & stats === */
+   .card.soft {
+     background: #fff; border: 1px solid #f0dcdc; border-radius: 12px; padding: 1rem;
+   }
+   .section-title { font-weight: 700; color: #800000; }
+   .stats {
+     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+     gap: .5rem; margin-top: .6rem;
+   }
+   .stat {
+     background: #faf7f7; border: 1px solid #f0dcdc; border-radius: 10px;
+     padding: .6rem .5rem; text-align: center;
+   }
+   .stat .k { font-size: 1.4rem; font-weight: 700; }
+   .stat .label { font-size: .9rem; color: #6b6b6b; }
+   
+   /* === Sesiones Pasadas: tabla & botones === */
+   .tabla-sesiones th, .tabla-sesiones td {
+     border-bottom: 1px solid #f0dcdc; padding: .55rem .6rem;
+   }
+   .btn-link {
+     background: none; color: #800000; border: none; padding: 0;
+     cursor: pointer; text-decoration: underline; font-weight: 600;
+   }
+   .btn-danger { color: #a00000; }
+   
+   /* Links del sidebar como botones reales */
+   .side-link {
+     display: block;
+     width: 100%;
+     background: transparent;
+     border: 0;
+     padding: .6rem .8rem;
+     text-align: left;
+     border-radius: 10px;
+     font: inherit;
+     color: inherit;
+     cursor: pointer;
+     user-select: none;
+   }
+   .side-link:hover { background: #f6e9e9; }
+   .side-link:active { transform: translateY(1px); }
+   
+   /* (opcional) estilo del seleccionado */
+   .side-link.is-active,
+   .side-link[aria-current="page"] {
+     background: #f4e6e6;
+     font-weight: 600;
+   }
+   
+   #vista-nota textarea {
+     border: 1px solid #f0dcdc;
+     border-radius: 10px;
+     padding: .6rem .75rem;
+     font-family: inherit;
+     font-size: .95rem;
+     resize: vertical;
+   }
+   #vista-nota button {
+     background: #800000;
+     color: #fff;
+     border: none;
+     border-radius: 10px;
+     padding: .6rem .9rem;
+     cursor: pointer;
+   }
+   #vista-nota button:hover { filter: brightness(1.05); }
+   
+   /* =========================
+      OVERRIDES FINALES
+      ========================= */
+   
+   /* 1) TÍTULOS (secciones y subtítulos) → GUINDA */
+   h1, h2, h3,
+   .section-title,
+   .page-panel > h2,
+   #uploadOrden h2,
+   #confirmarOrden h2,
+   #sesion h2,
+   #diputados h2,
+   #resultados h2,
+   #sesionesPasadas h2 {
+     color: var(--guinda) !important;
+     font-weight: 800;
+     letter-spacing: .2px;
+   }
+   
+   /* 2) TEXTOS LARGOS / DESCRIPTIVOS → NEGRO (Merriweather) */
+   #asuntoActual,
+   #resumenSesion .card .section-title + div,
+   .longtext,
+   #vista-iniciativa h3 {              /* lo quieres en negro */
+     color: #222 !important;
+     font-family: "Merriweather", serif !important;
+     font-weight: 700 !important;
+     line-height: 1.45;
+   }
+   
+   /* 3) Sidebar en guinda (por si otro estilo pisa) */
+   .sidebar .side-link { color: var(--guinda) !important; }
+   .sidebar h2 { color: var(--guinda); }
+   
