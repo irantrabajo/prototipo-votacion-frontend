@@ -355,15 +355,24 @@ function toRoman(num){
 }
  // ===== Helpers para clasificar y extraer metadatos =====
 // Reemplaza tu clasificarTipoAsunto actual por esta versión
+// ===== Helpers para clasificar y extraer metadatos =====
 function clasificarTipoAsunto(texto) {
-  const s = String(texto || '')
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const s = String(texto || '').toLowerCase();
 
-  if (/\bdispensa\s+de\s+lectura\b/.test(s)) return 'DISPENSA';
-  if (/\b(votacion|se somete a votacion|resultado de la votacion)\b/.test(s)) return 'VOTACION';
-  if (/\b(iniciativa|se (remite|turna) a comision|proyecto de decreto|propuesta de decreto)\b/.test(s)) return 'INICIATIVA';
-  return 'ANOTACION'; // todo lo demás → solo notas + siguiente punto
+  // → VOTACIÓN explícita
+  if (/\b(votaci[óo]n|se somete.*votaci[óo]n|resultado de la votaci[óo]n)\b/.test(s))
+    return 'VOTACION';
+
+  // → INICIATIVA (y derivados)
+  if (/\b(iniciativa|proyecto de decreto|propuesta de decreto|se (remite|turna) a comisi[óo]n)\b/.test(s))
+    return 'INICIATIVA';
+
+  // → NOTA (dispensas/lecturas, correspondencia, efemérides, pronunciamientos)
+  if (/\b(dispens(a|e) de (su )?lectura|dispens(a|e) la lectura|lectura y aprobaci[óo]n del acta|lectura del acta|correspondencia|comunicaci[óo]n|efemer[ií]des|pronunciamiento)\b/.test(s))
+    return 'NOTA';
+
+  // Fallback: cualquier cosa que no sea clara → NOTA
+  return 'NOTA';
 }
 
 async function _guardarNotaSilenciosa(asuntoId, texto) {
@@ -438,24 +447,31 @@ async function mostrarVistaNota(asunto, sesionId) {
 }
 
 async function abrirAsunto(asunto, sesionId){
-  // ocultar vistas especiales previas
+  // Oculta vistas especiales previas
   document.getElementById('vista-iniciativa')?.classList.add('hidden');
   document.getElementById('vista-nota')?.classList.add('hidden');
 
   if (asunto.tipo === 'INICIATIVA') {
     await mostrarVistaIniciativa(asunto, sesionId);
-  } else if (asunto.tipo === 'VOTACION') {
+    showSection('vista-iniciativa');
+    return;
+  }
+
+  if (asunto.tipo === 'VOTACION') {
     if (asunto.id) sessionStorage.setItem(K_AID, String(asunto.id));
     sessionStorage.setItem(K_ANAME, asunto.titulo || '(Asunto)');
     actualizarAsuntoActual();
     VOTADOS.clear();
     showSection('diputados');
     cargarDiputados();
-  } else {
-    // DISPENSA o ANOTACION → solo notas + siguiente punto
-    await mostrarVistaNota(asunto, sesionId);
+    return;
   }
+
+  // NOTA (dispensa/lectura/otros informativos)
+  await mostrarVistaNota(asunto, sesionId);
+  showSection('vista-nota');
 }
+
 
 function extraerAutorYLey(texto) {
   const t = String(texto || '');
@@ -637,25 +653,6 @@ async function mostrarVistaIniciativa(asunto, sesionId){
       // puedes enviar a resultados o a sesión
     }
   };
-}
-
-async function abrirAsunto(asunto, sesionId){
-  // oculta vista iniciativa por si estaba abierta
-  const v = document.getElementById('vista-iniciativa');
-  if (v) v.classList.add('hidden');
-
-  if (asunto.tipo === 'INICIATIVA') {
-    await mostrarVistaIniciativa(asunto, sesionId);
-  } else {
-    // VOTACIÓN → usa tu flujo existente
-    // Asegura K_AID / K_ANAME y arranca
-    if (asunto.id) sessionStorage.setItem(K_AID, String(asunto.id));
-    sessionStorage.setItem(K_ANAME, asunto.titulo || '(Asunto)');
-    actualizarAsuntoActual();
-    VOTADOS.clear();
-    showSection('diputados');
-    cargarDiputados();
-  }
 }
 
 // —————————————————————————
@@ -1124,9 +1121,6 @@ function filtrarDiputados() {
 // —————————————————————————
 // Router de secciones
 // —————————————————————————
-// —————————————————————————
-// Router de secciones
-// —————————————————————————
 function showSection(id) {
   // Bloqueo: no dejar entrar a "resultados" si aún no hay votación
   if (id === 'resultados') {
@@ -1138,8 +1132,9 @@ function showSection(id) {
   // Secciones de la app (incluye confirmarOrden)
   const secciones = [
     'uploadOrden','confirmarOrden','sesion','asunto',
-    'diputados','resultados','historial','sesionesPasadas','vistaEdicion'
-  ];
+    'diputados','resultados','historial','sesionesPasadas','vistaEdicion',
+    'vista-iniciativa','vista-nota'   // 👈 agrega estas dos
+  ];  
   secciones.forEach(s => {
     const el = document.getElementById(s);
     if (el) el.classList.toggle('hidden', s !== id);
