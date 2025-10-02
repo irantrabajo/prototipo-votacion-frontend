@@ -850,12 +850,9 @@ function showSection(id) {
   if (id === 'resultados') {
     const aid = sessionStorage.getItem('asunto_id');
     const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
-    if (!aid && (!Array.isArray(arr) || arr.length === 0)) {
-      return; // no navegues a resultados
-    }
+    if (!aid && (!Array.isArray(arr) || arr.length === 0)) return;
   }
 
-  // 👇 AQUI ESTÁ LA CLAVE: incluye 'confirmarOrden'
   const secciones = [
     'uploadOrden',
     'confirmarOrden',
@@ -873,7 +870,8 @@ function showSection(id) {
     if (el) el.classList.toggle('hidden', s !== id);
   });
 
-  document.querySelector('.sidebar').style.display = 'block';
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) sidebar.style.display = 'block';
 
   // Side-effects por sección
   if (id === 'resultados') marcarAusentes().then(cargarResultados);
@@ -886,18 +884,22 @@ function showSection(id) {
     setTimeout(hookSearchShortcuts, 0);
     actualizarAsuntoActual();
   }
-  if (id === 'sesion') {
-    cargarSesionesSubidas();
-  }
-    // --- SIEMPRE subir al tope al cambiar de sección ---
-    requestAnimationFrame(() => {
-      // usa 'smooth' si prefieres animado
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      // failsafe por si algún navegador ignora lo de arriba
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-  }
+  if (id === 'sesion') cargarSesionesSubidas();
+
+  // ——— Scroll al tope (con fallback) ———
+  const target = document.getElementById(id);
+  requestAnimationFrame(() => {
+    if (target?.scrollIntoView) {
+      // centra el inicio de la sección arriba
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+    // Fallbacks por si el navegador ignora lo anterior
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  });
+}
 // —————————————————————————
 // Sesiones pasadas / edición simple
 // —————————————————————————
