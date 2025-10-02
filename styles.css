@@ -472,5 +472,23 @@
   font-weight: 600;
 }
 
+#vista-nota textarea {
+  border: 1px solid #f0dcdc;
+  border-radius: 10px;
+  padding: .6rem .75rem;
+  font-family: inherit;
+  font-size: .95rem;
+  resize: vertical;
+}
+#vista-nota button {
+  background: #800000;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: .6rem .9rem;
+  cursor: pointer;
+}
+#vista-nota button:hover { filter: brightness(1.05); }
+
 
    

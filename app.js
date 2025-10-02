@@ -354,11 +354,107 @@ function toRoman(num){
   return out;
 }
  // ===== Helpers para clasificar y extraer metadatos =====
-function clasificarTipoAsunto(t) {
-  const s = String(t || '').toLowerCase();
-  if (/\b(votaci[óo]n|se somete a votaci[óo]n|resultado de la votaci[óo]n)\b/.test(s)) return 'VOTACION';
-  if (/\b(iniciativa|se (remite|turna) a comisi[óo]n|proyecto de decreto|propuesta de decreto)\b/.test(s)) return 'INICIATIVA';
-  return s.includes('iniciativa') ? 'INICIATIVA' : 'VOTACION';
+// Reemplaza tu clasificarTipoAsunto actual por esta versión
+function clasificarTipoAsunto(texto) {
+  const s = String(texto || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  if (/\bdispensa\s+de\s+lectura\b/.test(s)) return 'DISPENSA';
+  if (/\b(votacion|se somete a votacion|resultado de la votacion)\b/.test(s)) return 'VOTACION';
+  if (/\b(iniciativa|se (remite|turna) a comision|proyecto de decreto|propuesta de decreto)\b/.test(s)) return 'INICIATIVA';
+  return 'ANOTACION'; // todo lo demás → solo notas + siguiente punto
+}
+
+async function _guardarNotaSilenciosa(asuntoId, texto) {
+  if (!texto || !asuntoId) return;              // guarda solo si hay ID
+  try {
+    await fetch(`${API}/asuntos/${asuntoId}/nota`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ nota: texto })
+    });
+  } catch (_) {
+    // fallback local por si el endpoint no existe
+    const k = 'notas_asuntos';
+    const notas = JSON.parse(sessionStorage.getItem(k) || '{}');
+    notas[asuntoId] = texto;
+    sessionStorage.setItem(k, JSON.stringify(notas));
+  }
+}
+
+async function mostrarVistaNota(asunto, sesionId) {
+  // título
+  const h = document.getElementById('nota-titulo');
+  if (h) h.textContent = `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo || ''}`;
+
+  // limpia textarea
+  const ta = document.getElementById('nota-text');
+  if (ta) ta.value = '';
+
+  // muestra la sección
+  document.getElementById('vista-nota')?.classList.remove('hidden');
+
+  // botón siguiente
+  const btn = document.getElementById('nota-siguiente');
+  if (!btn) return;
+
+  btn.onclick = async () => {
+    const texto = ta?.value?.trim() || '';
+    // guarda si hay id (si no, lo ignoramos silenciosamente)
+    if (asunto.id) await _guardarNotaSilenciosa(asunto.id, texto);
+
+    // intenta pedir el siguiente al backend (si existe)
+    const desde = asunto.ordinal || 0;
+    let next = null;
+    try {
+      const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
+      if (r.ok) next = await r.json();
+    } catch {}
+
+    // fallback cliente con asuntos_array
+    if (!next) {
+      const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+      const idx = Math.max(0, (asunto.ordinal || 1) - 1);
+      const raw = arr[idx + 1];
+      if (raw) {
+        next = {
+          id: raw.id ?? null,
+          sesion_id: sesionId || null,
+          ordinal: (asunto.ordinal || 1) + 1,
+          tipo: raw.tipo || clasificarTipoAsunto(raw.asunto || raw.titulo || ''),
+          titulo: raw.asunto || raw.titulo || ''
+        };
+      }
+    }
+
+    if (next) {
+      abrirAsunto(next, sesionId);
+    } else {
+      alert('No hay más asuntos.');
+      showSection('resultados');
+    }
+  };
+}
+
+async function abrirAsunto(asunto, sesionId){
+  // ocultar vistas especiales previas
+  document.getElementById('vista-iniciativa')?.classList.add('hidden');
+  document.getElementById('vista-nota')?.classList.add('hidden');
+
+  if (asunto.tipo === 'INICIATIVA') {
+    await mostrarVistaIniciativa(asunto, sesionId);
+  } else if (asunto.tipo === 'VOTACION') {
+    if (asunto.id) sessionStorage.setItem(K_AID, String(asunto.id));
+    sessionStorage.setItem(K_ANAME, asunto.titulo || '(Asunto)');
+    actualizarAsuntoActual();
+    VOTADOS.clear();
+    showSection('diputados');
+    cargarDiputados();
+  } else {
+    // DISPENSA o ANOTACION → solo notas + siguiente punto
+    await mostrarVistaNota(asunto, sesionId);
+  }
 }
 
 function extraerAutorYLey(texto) {
