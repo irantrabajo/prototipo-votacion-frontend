@@ -139,7 +139,7 @@
     <section id="asunto" class="hidden">
       <h2>📝 Selecciona un Asunto</h2>
       <select id="listaAsuntos"></select>
-      <button id="iniciarBtn" type="button" onclick="iniciarSesionDesdeSelect()">Iniciar Sesión</button>
+      <button id="iniciarBtn" type="button">Iniciar Sesión</button>
     </section>    
 
     <!-- 4) Diputados -->
@@ -163,6 +163,28 @@
       />
       <div id="diputados-container"></div>
     </section>
+
+    <!-- 4.1) Vista Iniciativa (SECCIÓN PROPIA) -->
+      <section id="vista-iniciativa" class="hidden">
+        <h3 id="ini-titulo"></h3>
+
+  <div style="margin:.5rem 0">
+      <label>Buscar comisión</label><br>
+        <input id="com-buscar" placeholder="Escribe para filtrar..." />
+  </div>
+
+  <div id="com-lista" class="lista-comisiones" style="max-height:260px;overflow:auto;border:1px solid #f0dcdc;border-radius:8px;padding:.5rem"></div>
+
+  <div style="margin-top:10px">
+    <label>Opinión</label><br>
+      <textarea id="ini-opinion" rows="3" style="width:100%;max-width:740px"></textarea>
+  </div>
+
+  <div style="margin-top:12px">
+    <button id="ini-guardar">Guardar remisión</button>
+    <button id="ini-siguiente">Siguiente asunto</button>
+  </div>
+</section>
 
     <!-- 5) Resultados por Asunto -->
     <section id="resultados" class="hidden">
@@ -202,6 +224,7 @@
     <!-- 7) Sesiones pasadas (vista tipo tabla) -->
 <section id="sesionesPasadas" class="hidden">
   <h2>🗂️ Sesiones Pasadas</h2>
+  
 
   <!-- Buscador (usa la función que sí existe en app.js) -->
   <div style="margin:10px 0 14px;">
