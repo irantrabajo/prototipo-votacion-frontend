@@ -447,4 +447,30 @@
   .asunto-item { align-items: flex-start; }
 }
 
+/* Links del sidebar como botones reales */
+.side-link {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: .6rem .8rem;
+  text-align: left;
+  border-radius: 10px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;      /* 👈 manita */
+  user-select: none;    /* evita la I de texto */
+}
+
+.side-link:hover { background: #f6e9e9; }
+.side-link:active { transform: translateY(1px); }
+
+/* (opcional) estilo del seleccionado si luego quieres marcarlo */
+.side-link.is-active,
+.side-link[aria-current="page"] {
+  background: #f4e6e6;
+  font-weight: 600;
+}
+
+
    
