@@ -82,7 +82,10 @@
   #sesion input::placeholder, #asunto input::placeholder{ color: rgba(128,0,0,0.6); }
   
   .error{ color:red; text-align:center; font-weight:bold; }
- 
+  
+  /* =========================
+     LOGIN
+     ========================= */
   #login{
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   }
@@ -112,7 +115,9 @@
   }
   .olvido a{ color:#a00000; text-decoration:underline; font-weight:bold; }
   
-/
+  /* =========================
+     SIDEBAR + MAIN
+     ========================= */
   .sidebar{
     position: fixed; top: 0; left: 0;
     width: 220px; height: 100vh; background: #fff; padding: 1rem;
@@ -141,10 +146,12 @@
     border-radius:16px; box-shadow:0 8px 22px rgba(0,0,0,.08);
     padding:20px; max-width:1100px; margin:16px auto; text-align:center;
   }
-  /* Oculta título duplicado dentro del panel principal  */
+  /* Oculta título duplicado dentro del panel principal (si llegara a renderizarse) */
   .page-panel > .titulo-general { display: none !important; }
   
-
+  /* =========================
+     ACCIONES / GRIDS / STATS
+     ========================= */
   .actions{
     display:grid; grid-template-columns: repeat(2, minmax(220px, 1fr));
     gap:12px; align-items:stretch; margin-top:14px;
@@ -170,7 +177,9 @@
     display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin-bottom:2rem;
   }
   
- 
+  /* =========================
+     PREVIA DE ASUNTOS
+     ========================= */
   .asunto-item{
     display:grid; grid-template-columns:12px 1fr auto;
     align-items:start; gap:.6rem;
@@ -195,7 +204,9 @@
   #previewAsuntos .asunto-item > button:hover{ background:#ffecec; transform:none; box-shadow:none; }
   li.asunto-item{ list-style:none; }
   
- 
+  /* =========================
+     DIPUTADOS
+     ========================= */
   #diputados-container{
     display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
     gap:16px; align-items:stretch; justify-items:stretch;
@@ -233,7 +244,9 @@
     font-size:16px; line-height:1.2;   /* evita auto-zoom en mobile */
   }
   
-  
+  /* =========================
+     RESULTADOS
+     ========================= */
   #resumenSesion{
     display:grid; grid-template-columns: repeat(2, minmax(260px, 1fr));
     gap: 12px; align-items: stretch;
@@ -250,7 +263,9 @@
     padding: 1rem; border-radius: 5px; margin-top: 1rem; text-align: left; color: var(--guinda);
   }
   
-
+  /* =========================
+     SESIONES (TABLA)
+     ========================= */
   .tabla-wrapper{ overflow:auto; border:1px solid var(--bord); border-radius:12px; background:#fff; }
   
   .tabla-sesiones{
@@ -292,10 +307,15 @@
   #tablaSesionesBody td[colspan="6"]{ color:#6a3333; background:#fffafa; font-weight:500; }
   .tabla-sesiones tbody tr.clickable:hover{ background:#fff0f0; cursor:pointer; }
   
-
+  /* =========================
+     SECCIONES ESPECÍFICAS
+     ========================= */
   #uploadOrden h2{ margin-top:.5rem; margin-bottom:1rem; font-size:1.4rem; }
   #linkResultados { display:inline-block; }
   
+  /* =========================
+     RESPONSIVE
+     ========================= */
   @media (max-width: 992px){
     .actions{ grid-template-columns: 1fr 1fr; gap:10px; }
     .actions button{ padding:10px 12px; font-size:.95rem; border-radius:10px; }
@@ -469,9 +489,11 @@
   }
   #vista-nota button:hover { filter: brightness(1.05); }
   
- 
+  /* =========================
+     OVERRIDES FINALES
+     ========================= */
   
-
+  /* 1) TÍTULOS (secciones y subtítulos) → GUINDA */
   h1, h2, h3,
   .section-title,
   .page-panel > h2,
@@ -505,3 +527,27 @@
     font-family: var(--font-sans) !important;
   }
   
+  /* ---- Fix: solo el sidebar en negro ---- */
+.sidebar .side-link,
+.sidebar a.side-link {
+  color: #222 !important;
+}
+
+/* Fuera del sidebar, los “botones” vuelven a su look guinda */
+.side-link:not(.in-sidebar),
+.page-panel .side-link,
+.main .side-link {
+  color: var(--guinda) !important;
+}
+
+/* (opcional) si esos “botones” son links estilo tarjeta */
+.page-panel .side-link,
+.main .side-link {
+  background: #fff;
+  border: 1px solid var(--bord);
+  border-radius: 10px;
+  padding: .6rem .8rem;
+  text-decoration: none;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
