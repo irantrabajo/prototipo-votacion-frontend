@@ -1058,7 +1058,7 @@ html, body {
   min-height: 100vh;
 }
 
-/* 2) El contenedor de partículas también debe ser rosita */
+/* 2) El contenedor de partículas también debe ser rosita <3 */
 #particles-js,
 #particles-js canvas {
   background: #fff6f6 !important;
@@ -1069,3 +1069,32 @@ html, body {
   position: relative;
   z-index: 1;
 }
+
+
+
+
+/* 1) Fondo global rosita (gana a lo anterior) */
+html, body {
+  background: #fff6f6 !important;  /* rosita */
+  min-height: 100vh;
+}
+
+/* 2) El contenedor de partículas va fuera del flujo y transparente */
+#particles-js {
+  position: fixed;      /* no empuja el layout */
+  inset: 0;             /* top/right/bottom/left: 0 */
+  z-index: 0;           /* por detrás del contenido */
+  pointer-events: none; /* no bloquea clics */
+  background: transparent !important; /* deja ver el rosita del body */
+}
+
+/* 3) El contenido por encima del canvas */
+.login-page,
+.main,
+.sidebar {
+  position: relative;
+  z-index: 1;
+}
+
+/* 4)  anula la animación de fondo previa sa */
+@keyframes fondoAnimado { from { } to { } }  
