@@ -98,7 +98,6 @@ function mostrarApp() {
   document.querySelector('.sidebar').classList.remove('hidden');
   document.querySelector('.main').classList.remove('hidden');
   showSection('uploadOrden');
-  document.getElementById('uploadOrden').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 updateResultadosLinkVisibility();
@@ -306,7 +305,7 @@ async function procesarSesion(sesionId, nombreCodificado) {
 
   // 4) Mostrar la previa “confirmarOrden”
   showSection('confirmarOrden');
-  document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'auto', block: 'start' });
 }
 
 // Continúa: llena select y pasa a “asunto”
@@ -602,7 +601,7 @@ async function votar(did, voto) {
 
     // 4) Mantén vista de Diputados arriba
     const secDip = document.getElementById('diputados');
-    if (secDip) secDip.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (secDip) secDip.scrollIntoView({ behavior: 'auto', block: 'start' });
     await updateResultadosLinkVisibility();
 
   } catch (err) {
@@ -857,18 +856,14 @@ function filtrarDiputados() {
 // Router de secciones
 // —————————————————————————
 function showSection(id) {
-  // Bloqueo de "resultados" si no hay votación
+  // Bloqueo: no dejar entrar a "resultados" si aún no hay votación
   if (id === 'resultados') {
     const aid = sessionStorage.getItem('asunto_id');
     const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
     if (!aid && (!Array.isArray(arr) || arr.length === 0)) return;
   }
 
-  // Quita el foco de lo que esté activo (para que no autodesplace)
-  if (document.activeElement && typeof document.activeElement.blur === 'function') {
-    document.activeElement.blur();
-  }
-
+  // Secciones de la app (incluye confirmarOrden)
   const secciones = [
     'uploadOrden','confirmarOrden','sesion','asunto',
     'diputados','resultados','historial','sesionesPasadas','vistaEdicion'
@@ -881,6 +876,7 @@ function showSection(id) {
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = 'block';
 
+  // Side-effects por sección
   if (id === 'resultados') marcarAusentes().then(cargarResultados);
   if (id === 'sesionesPasadas') cargarSesionesPasadas();
   if (id === 'historial') {
@@ -893,45 +889,46 @@ function showSection(id) {
   }
   if (id === 'sesion') cargarSesionesSubidas();
 
-  // —— FORZAR scroll al tope (con varios fallbacks) ——
-  const target = document.getElementById(id);
-  // 1) dos rAF para asegurar reflow de la UI
+  // --- SUBIR ARRIBA SÍ O SÍ (ancla + reset de scrollers) ---
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (target?.scrollIntoView) {
-        target.scrollIntoView({ behavior: 'auto', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      }
-      // 2) fallbacks directos
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      // 3) un timeout 0 por si el navegador ignora los rAF
-      setTimeout(() => { window.scrollTo(0, 0); }, 0);
-    });
-  });
-  // --- SIEMPRE volver al tope al cambiar de sección ---
-requestAnimationFrame(() => {
-  // Ventana
-  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    // 0) quita foco (evita que el navegador te vuelva a bajar)
+    const ae = document.activeElement;
+    if (ae && typeof ae.blur === 'function') { try { ae.blur(); } catch {} }
 
-  // Failsafes por si el scroll vive en un contenedor (ej. .main)
-  const scrollers = [
-    document.scrollingElement,
-    document.documentElement,
-    document.body,
-    document.querySelector('.main'),
-    document.querySelector('#uploadOrden'),
-    document.querySelector('#confirmarOrden'),
-    document.querySelector('#sesion'),
-    document.querySelector('#asunto'),
-    document.querySelector('#diputados'),
-    document.querySelector('#resultados'),
-    document.querySelector('#sesionesPasadas'),
-    document.querySelector('#historial')
-  ];
-  scrollers.forEach(el => { if (el && typeof el.scrollTop === 'number') el.scrollTop = 0; });
-});
+    // 1) ancla al tope (se crea una vez)
+    let topAnchor = document.getElementById('topAnchor');
+    if (!topAnchor) {
+      topAnchor = document.createElement('div');
+      topAnchor.id = 'topAnchor';
+      topAnchor.style.position = 'relative';
+      topAnchor.style.top = '0';
+      const main = document.querySelector('.main');
+      if (main) main.prepend(topAnchor); else document.body.prepend(topAnchor);
+    }
+    try { topAnchor.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' }); }
+    catch { topAnchor.scrollIntoView(true); }
+
+    // 2) resetea TODO lo que pueda tener scroll
+    const candidates = new Set([
+      document.scrollingElement,
+      document.documentElement,
+      document.body,
+      document.querySelector('.main'),
+      document.querySelector('.page-panel'),
+      document.getElementById(id)
+    ]);
+    document.querySelectorAll('div,main,section,article,aside').forEach(el => candidates.add(el));
+
+    const resetAll = () => {
+      window.scrollTo(0, 0);
+      candidates.forEach(el => {
+        if (el && typeof el.scrollTop === 'number') el.scrollTop = 0;
+      });
+    };
+    resetAll();
+    setTimeout(resetAll, 50);
+    setTimeout(resetAll, 200);
+  });
 }
 
 // —————————————————————————
