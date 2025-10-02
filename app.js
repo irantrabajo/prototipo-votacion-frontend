@@ -316,36 +316,6 @@ async function procesarSesion(sesionId, nombreCodificado) {
   document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'auto', block: 'start' });
 }
 
-// Continúa: llena select y pasa a “asunto”
-async function continuarConSesion(sid) {
-  await cargarAsuntosDeSesion(sid); // esto ya setea K_AID/K_ANAME y el select
-  showSection('asunto');
-}
-
-async function cargarAsuntosDeSesion(sesionId) {
-  try {
-    const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
-    const asuntos = await r.json();
-
-    // guarda para navegación/“siguiente asunto”
-    sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
-    sessionStorage.setItem('asunto_index', '0');
-    if (asuntos[0]) {
-      sessionStorage.setItem(K_AID, asuntos[0].id);
-      sessionStorage.setItem(K_ANAME, asuntos[0].asunto);
-    }
-    actualizarAsuntoActual();
-
-    // llena el <select> si usas esa vista
-    const sel = document.getElementById('listaAsuntos');
-    if (sel) sel.innerHTML = asuntos.map(a => `<option value="${a.id}">${a.asunto}</option>`).join('');
-
-  } catch (e) {
-    console.error('cargarAsuntosDeSesion', e);
-    alert('No se pudieron cargar los asuntos de la sesión.');
-  }
-}
-
 // Números romanos
 function toRoman(num){
   const map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
@@ -440,26 +410,42 @@ async function mostrarVistaNota(asunto, sesionId) {
     if (next) {
       abrirAsunto(next, sesionId);
     } else {
-      alert('No hay más asuntos.');
-      showSection('resultados');
-    }
+      finalizarSesionParlamentaria();
+    }    
   };
 }
 
 async function abrirAsunto(asunto, sesionId){
-  // Oculta vistas especiales previas
+  // Oculta vistas previas
   document.getElementById('vista-iniciativa')?.classList.add('hidden');
   document.getElementById('vista-nota')?.classList.add('hidden');
 
-  if (asunto.tipo === 'INICIATIVA') {
-    await mostrarVistaIniciativa(asunto, sesionId);
-    showSection('vista-iniciativa');
+  const tipoDetectado = asunto.tipo || clasificarTipoAsunto(asunto.titulo || '');
+  const a = { ...asunto, tipo: tipoDetectado };
+
+  if (a.tipo === 'INICIATIVA') {
+    await mostrarVistaIniciativa(a, sesionId);
     return;
   }
 
-  if (asunto.tipo === 'VOTACION') {
-    if (asunto.id) sessionStorage.setItem(K_AID, String(asunto.id));
-    sessionStorage.setItem(K_ANAME, asunto.titulo || '(Asunto)');
+  if (a.tipo === 'VOTACION') {
+    // Guarda id/nombre del asunto activo
+    if (a.id) sessionStorage.setItem(K_AID, String(a.id));
+    sessionStorage.setItem(K_ANAME, a.titulo || '(Asunto)');
+
+    // Calcula y guarda índice actual (con fallback por ordinal si no hay id)
+    const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+    let idx = -1;
+    if (a.id != null) {
+      idx = arr.findIndex(x => String(x.id) === String(a.id));
+    }
+    if (idx === -1) {
+      const ord0 = (a.ordinal || 1) - 1;
+      idx = Math.max(0, Math.min(ord0, arr.length - 1));
+    }
+    sessionStorage.setItem('asunto_index', String(idx));
+
+    // Ir a votar
     actualizarAsuntoActual();
     VOTADOS.clear();
     showSection('diputados');
@@ -467,11 +453,9 @@ async function abrirAsunto(asunto, sesionId){
     return;
   }
 
-  // NOTA (dispensa/lectura/otros informativos)
-  await mostrarVistaNota(asunto, sesionId);
-  showSection('vista-nota');
+  // NOTA / DISPENSA / LECTURAS
+  await mostrarVistaNota(a, sesionId);
 }
-
 
 function extraerAutorYLey(texto) {
   const t = String(texto || '');
@@ -489,10 +473,8 @@ async function renderizarAsuntos(){
   const ul = document.getElementById('previewAsuntos');
   if (!ul) return;
 
-  // lee la lista vigente
   let asuntos = [];
-  try { asuntos = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]'); }
-  catch {}
+  try { asuntos = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]'); } catch {}
 
   if (!Array.isArray(asuntos) || !asuntos.length) {
     ul.innerHTML = `<li class="asunto-item"><div class="caja-asunto">Sin asuntos detectados.</div></li>`;
@@ -503,66 +485,44 @@ async function renderizarAsuntos(){
   asuntos.forEach((a, i) => {
     const li = document.createElement('li');
     li.className = 'asunto-item';
-    const titulo = a.asunto || a.texto || a.titulo || '';
-
-    // si backend aún no manda tipo/ordinal, calculamos en cliente
+    const titulo  = a.asunto || a.texto || a.titulo || '';
     const ordinal = (a.ordinal && Number(a.ordinal)) || (i + 1);
     const tipo    = a.tipo || clasificarTipoAsunto(titulo);
 
     li.innerHTML = `
-      <div class="punto-rojo"></div>
-      <div class="caja-asunto">
-        <b>${aRomano(ordinal)}.</b> ${titulo}
-        <span style="margin-left:8px;border:1px solid #f0dcdc;border-radius:8px;padding:2px 6px">
-          ${tipo}
-        </span>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button type="button" class="btn-open">Abrir</button>
-        <button type="button" class="btn-del" style="background:#fff;color:#a00000;border:1px solid #f4c7c7">Borrar</button>
-      </div>
-    `;
-
-    // Abrir (enrutamos por tipo)
-    li.querySelector('.btn-open').onclick = () => {
-      const sesionId = Number(sessionStorage.getItem('sesion_id') || sessionStorage.getItem(K_SID));
-      // armamos objeto asunto con lo necesario
-      const asuntoObj = {
-        id: a.id ?? null,
-        sesion_id: sesionId || null,
-        ordinal,
-        tipo,
-        titulo
-      };
-      abrirAsunto(asuntoObj, sesionId);
-    };
+  <div class="punto-rojo"></div>
+  <div class="caja-asunto">
+    <b>${aRomano(ordinal)}.</b> ${titulo}
+    <span style="margin-left:8px;border:1px solid #f0dcdc;border-radius:8px;padding:2px 6px">
+      ${tipo}
+    </span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button type="button" class="btn-del" style="background:#fff;color:#a00000;border:1px solid #f4c7c7">Borrar</button>
+  </div>
+`;
 
     // Borrar
     li.querySelector('.btn-del').onclick = async () => {
       if (!confirm('¿Borrar este asunto?')) return;
-
       const sesionId = Number(sessionStorage.getItem('sesion_id') || sessionStorage.getItem(K_SID));
-
       if (a.id) {
-        // borrar en BD (renumera backend)
         await fetch(`${API}/asunto/${a.id}`, { method: 'DELETE' }).catch(()=>{});
-        // refrescamos desde backend
         const r = await fetch(`${API}/asuntos?sesion_id=${sesionId}`).catch(()=>null);
         const nuevos = r ? await r.json() : [];
         sessionStorage.setItem('asuntos_array', JSON.stringify(nuevos));
       } else {
-        // solo en memoria (aún no existe en BD)
         const lista = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
         lista.splice(i, 1);
         sessionStorage.setItem('asuntos_array', JSON.stringify(lista));
       }
-
       renderizarAsuntos();
     };
 
     ul.appendChild(li);
   });
 }
+
 
 let _COMISIONES_CACHE = null;
 async function getComisiones(){
@@ -649,10 +609,9 @@ async function mostrarVistaIniciativa(asunto, sesionId){
     if (next) {
       abrirAsunto(next, sesionId);
     } else {
-      alert('No hay más asuntos.');
-      // puedes enviar a resultados o a sesión
+      finalizarSesionParlamentaria();
     }
-  };
+  };  
 }
 
 // —————————————————————————
@@ -663,21 +622,28 @@ async function confirmarOrden(){
     const sid = SID();
     if (!sid) return alert('No hay sesión activa.');
 
-    // Recargar la lista definitiva desde BD
     const r = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`);
     const finales = await r.json();
 
     sessionStorage.setItem('asuntos_array', JSON.stringify(finales));
     sessionStorage.setItem('asunto_index', '0');
 
+    // Oculta la previa
+    document.getElementById('confirmarOrden')?.classList.add('hidden');
+
     if (finales.length) {
-      sessionStorage.setItem(K_AID, String(finales[0].id));
-      sessionStorage.setItem(K_ANAME, finales[0].asunto);
-      actualizarAsuntoActual();
-      const sel = document.getElementById('listaAsuntos');
-      if (sel) sel.innerHTML = finales.map(a => `<option value="${a.id}">${a.asunto}</option>`).join('');
+      const first = finales[0];
+      const asuntoObj = {
+        id: first.id ?? null,
+        sesion_id: sid,
+        ordinal: 1,
+        tipo: first.tipo || clasificarTipoAsunto(first.asunto || first.titulo || ''),
+        titulo: first.asunto || first.titulo || ''
+      };
+      abrirAsunto(asuntoObj, sid);   // ← ¡Arranca ya!
+    } else {
+      alert('No hay asuntos en la sesión.');
     }
-    showSection('asunto');
   } catch (e) {
     console.error('confirmarOrden:', e);
     alert('Error confirmando la orden.');
@@ -703,9 +669,9 @@ if (busc) busc.value = '';
     showSection('diputados');
     cargarDiputados();
   } else {
-    alert('✅ Todos los asuntos han sido votados. Puedes ver los resultados generales.');
-    showSection('resultados');
-  }
+    finalizarSesionParlamentaria();
+  }  
+  
 }
 
 // —————————————————————————
@@ -726,41 +692,7 @@ async function guardarSesion() {
   document.getElementById('registroSesion').classList.add('hidden');
   document.getElementById('sesionActiva').classList.remove('hidden');
   document.getElementById('nombreSesionActivo').innerText = name;
-  showSection('asunto');
-}
-
-// —————————————————————————
-async function guardarAsunto() {
-  const sel = document.getElementById('listaAsuntos');
-  const sid = SID();
-  if (!sid || !sel) return alert('Faltan datos.');
-
-  const selectedId   = sel.value;                                  // id del asunto si ya existe
-  const selectedText = sel.selectedOptions?.[0]?.text || '';        // texto del asunto
-
-  // Si ya existe en BD, no crees otro: solo selecciona y avanza a votar
-  if (selectedId) {
-    sessionStorage.setItem(K_AID, selectedId);
-    sessionStorage.setItem(K_ANAME, selectedText);
-  } else {
-    // Si no hay id (caso raro), créalo con el texto
-    const res = await fetch(`${backend}/api/asunto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ asunto: selectedText, sesion_id: sid })
-    });
-    if (!res.ok) return alert('No se pudo crear el asunto.');
-    const { asunto_id } = await res.json();
-    sessionStorage.setItem(K_AID, String(asunto_id));
-    sessionStorage.setItem(K_ANAME, selectedText);
-  }
-
-  actualizarAsuntoActual();
-  updateResultadosLinkVisibility();
-  VOTADOS.clear();
-  const busc = document.getElementById('buscadorDiputado'); if (busc) busc.value = '';
-  showSection('diputados');
-  cargarDiputados();
+  showSection('sesion');
 }
 
 // —————————————————————————
@@ -1130,10 +1062,9 @@ function showSection(id) {
   }
 
   // Secciones de la app (incluye confirmarOrden)
-  const secciones = [
-    'uploadOrden','confirmarOrden','sesion','asunto',
+  const secciones = ['uploadOrden','confirmarOrden','sesion',
     'diputados','resultados','historial','sesionesPasadas','vistaEdicion',
-    'vista-iniciativa','vista-nota'   // 👈 agrega estas dos
+    'vista-iniciativa','vista-nota' 
   ];  
   secciones.forEach(s => {
     const el = document.getElementById(s);
@@ -1904,39 +1835,22 @@ async function eliminarSesion(idSesion) {
   }
 }
 
-// Renombrar botón y enganchar click
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('iniciarBtn');
-  if (btn) {
-    btn.textContent = 'Iniciar Sesión';
-    btn.addEventListener('click', iniciarSesionDesdeSelect);
-  }
-});
+function finalizarSesionParlamentaria(){
+  const usuario = sessionStorage.getItem('usuario');
+  const rol     = sessionStorage.getItem('rol');
 
-// Iniciar Sesión desde el <select> de asuntos
-function iniciarSesionDesdeSelect() {
-  const sid = sessionStorage.getItem(K_SID);
-  const sel = document.getElementById('listaAsuntos');
-  const aid = sel?.value || null;
-  const aname = sel?.selectedOptions?.[0]?.text || '';
+  [K_SID, K_SNAME, K_AID, K_ANAME, K_FULL, K_ASUNTO_CNT,
+   'asuntos_array', 'asunto_index', 'sesion_nombre_original', 'asuntos_detectados_tmp'
+  ].forEach(k => sessionStorage.removeItem(k));
 
-  if (!sid || !aid) {
-    alert('Selecciona un asunto antes de continuar.');
-    return;
-  }
-
-  sessionStorage.setItem(K_AID, String(aid));
-  sessionStorage.setItem(K_ANAME, aname);
-  actualizarAsuntoActual();
+  if (usuario) sessionStorage.setItem('usuario', usuario);
+  if (rol)     sessionStorage.setItem('rol', rol);
 
   VOTADOS.clear();
-  const busc = document.getElementById('buscadorDiputado');
-  if (busc) busc.value = '';
-
-  showSection('diputados');
-  cargarDiputados();
+  updateResultadosLinkVisibility();
+  showSection('sesionesPasadas');
+  cargarSesionesPasadas();
 }
-
 
 
 
@@ -1971,10 +1885,7 @@ window.subirOrden          = subirOrden;
 window.cargarSesionesSubidas = cargarSesionesSubidas;
 window.procesarSesion      = procesarSesion;
 window.filtrarListaSesiones = filtrarListaSesiones;
-
-// (opcional) por compatibilidad temporal:
 window.uploadOrden = subirOrden;
 window.renderizarPreviaAsuntos = renderizarPreviaAsuntos;
 window.eliminarAsuntoPrevio    = eliminarAsuntoPrevio;
-// ya expones confirmarOrden:
 window.confirmarOrden          = confirmarOrden;
