@@ -392,6 +392,19 @@
 .actions .full { flex: 1 1 260px; }
 
 /* === Vista Iniciativa === */
+/* Checkboxes en guinda */
+#com-lista input[type="checkbox"],
+.lista-comisiones input[type="checkbox"]{
+  accent-color: var(--guinda);
+  width: 18px;
+  height: 18px;
+}
+#com-lista input[type="checkbox"]:focus,
+.lista-comisiones input[type="checkbox"]:focus{
+  outline: 2px solid #e5bcbc;
+  outline-offset: 2px;
+}
+
 #vista-iniciativa h3 { margin-top: 0; color: #800000; }
 #com-buscar {
   width: 100%; max-width: 520px;
@@ -491,4 +504,20 @@
 #vista-nota button:hover { filter: brightness(1.05); }
 
 
-   
+/* Iniciativa: botón Siguiente en guinda */
+#ini-siguiente {
+  background: var(--guinda) !important;
+  color: #fff;
+}
+
+/* Resultados: por si acaso, fuerza guinda también */
+#botonSiguienteAsunto button,
+#botonTerminarSesion button {
+  background: var(--guinda);
+  color: #fff;
+}
+
+#botonSiguienteAsunto button:hover,
+#botonTerminarSesion button:hover {
+  background: #a00000;
+}

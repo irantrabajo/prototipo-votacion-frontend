@@ -600,7 +600,9 @@ function eliminarAsuntoPrevio(idx){
 }
 
 async function mostrarVistaIniciativa(asunto, sesionId){
-  document.getElementById('ini-titulo').textContent = `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo}`;
+  document.getElementById('ini-titulo').textContent =
+    `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo}`;
+
   const coms = await getComisiones();
   pintarComisiones(coms);
 
@@ -613,32 +615,42 @@ async function mostrarVistaIniciativa(asunto, sesionId){
 
   document.getElementById('vista-iniciativa').classList.remove('hidden');
 
-  // Guardar remisión (comisiones + opinión)
-  document.getElementById('ini-guardar').onclick = async ()=>{
-    if (!asunto.id) { alert('Aún no hay ID de asunto en BD.'); return; }
-    const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')].map(x=>parseInt(x.value,10));
-    const opinion = document.getElementById('ini-opinion').value || '';
+  // 👇 Ocultar el botón "Guardar remisión" (si existe) y quitar cualquier handler
+  const btnGuardar = document.getElementById('ini-guardar');
+  if (btnGuardar) {
+    btnGuardar.classList.add('hidden');
+    btnGuardar.onclick = null;
+  }
 
-    const r = await fetch(`${API}/asuntos/${asunto.id}/remision`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ comisionesIds: ids, opinion })
-    });
-    if (!r.ok) { alert('No se pudo guardar la remisión'); return; }
-    alert('Remisión guardada ✅');
-  };
-
-  // Siguiente asunto (pide al backend el siguiente por ordinal)
+  // 👉 Al dar "Siguiente asunto": guarda en silencio y avanza
   document.getElementById('ini-siguiente').onclick = async ()=>{
-    const desde = asunto.ordinal || 0;
-    const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
-    const next = await r.json();
-    if (next) {
-      abrirAsunto(next, sesionId);
-    } else {
-      finalizarSesionParlamentaria();
+    // Guardado silencioso (sin alert)
+    if (asunto.id) {
+      try {
+        const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')]
+          .map(x => parseInt(x.value, 10));
+        const opinion = document.getElementById('ini-opinion')?.value || '';
+        await fetch(`${API}/asuntos/${asunto.id}/remision`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ comisionesIds: ids, opinion })
+        });
+      } catch (e) {
+        console.warn('No se pudo guardar la remisión (se continúa):', e);
+      }
     }
-  };  
+
+    // Pedir el siguiente asunto y navegar
+    const desde = asunto.ordinal || 0;
+    let next = null;
+    try {
+      const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
+      if (r.ok) next = await r.json();
+    } catch {}
+
+    if (next) abrirAsunto(next, sesionId);
+    else finalizarSesionParlamentaria();
+  };
 }
 
 // —————————————————————————
