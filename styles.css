@@ -1045,3 +1045,9 @@ li.asunto-item{ list-style:none; }
 
 /* Oculta el título duplicado dentro del panel principal  */
 .page-panel > .titulo-general { display: none !important; }
+
+
+body {
+  background-color: #fff6f6; /* tu colorcito */
+  min-height: 100vh;
+}
