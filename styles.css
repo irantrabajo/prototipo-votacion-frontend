@@ -1042,3 +1042,6 @@ body {
   text-align:left;
 }
 li.asunto-item{ list-style:none; }
+
+/* Oculta el título duplicado dentro del panel principal  */
+.page-panel > .titulo-general { display: none !important; }
