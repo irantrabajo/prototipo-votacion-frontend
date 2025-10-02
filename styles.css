@@ -403,8 +403,7 @@
      outline: 2px solid #e5bcbc;
      outline-offset: 2px;
    }
-   
-   #vista-iniciativa h3 { margin-top: 0; color: #800000; }
+
    #com-buscar {
      width: 100%; max-width: 520px;
      padding: .55rem .7rem; border: 2px solid #800000; border-radius: 10px;
@@ -422,7 +421,6 @@
      background: #800000; color: #fff; border: none;
      padding: .5rem .8rem; border-radius: 10px; font-weight: 600; cursor: pointer;
    }
-   #ini-siguiente { background: #5b5b5b; }
    
    /* === Resultados: tarjetas & stats === */
    .card.soft {
@@ -522,10 +520,6 @@
      line-height: 1.45;
    }
    
-   /* 3) Sidebar en guinda (por si otro estilo pisa) */
-   .sidebar .side-link { color: var(--guinda) !important; }
-   .sidebar h2 { color: var(--guinda); }
-   
 
    /* === Ajustes finos pedidos === */
 
@@ -565,4 +559,53 @@
 #ini-siguiente:hover,
 #nota-siguiente:hover {
   background: #a00000 !important;
+}
+
+/* === Sidebar: botones en negro === */
+.sidebar h2 { color: var(--guinda) !important; } /* el título sigue guinda */
+
+.sidebar a,
+.sidebar .side-link {
+  color: #222 !important;      /* texto negro */
+  font-weight: 600;
+}
+
+.sidebar a:hover,
+.sidebar .side-link:hover {
+  background: #f6e9e9;
+  color: #222 !important;       /* mantener negro en hover */
+}
+
+.sidebar a:active,
+.sidebar .side-link:active,
+.sidebar a.is-active,
+.sidebar .side-link.is-active,
+.sidebar a[aria-current="page"],
+.sidebar .side-link[aria-current="page"] {
+  color: #222 !important;       /* negro también en activo/seleccionado */
+}
+
+/* 'Sesión: …' siempre en negro */
+.session-name, #sessionName, #previewSesion{
+  color:#222 !important;
+  font-family:"Merriweather", serif !important;
+  font-weight:700 !important;
+}
+
+/* === Sidebar: forzar texto de los botones en NEGRO === */
+.sidebar { color:#222 !important; }                 /* color base del sidebar */
+.sidebar h2 { color: var(--guinda) !important; }    /* el título sigue en guinda */
+
+/* links/botones del menú en negro en todos los estados y anidados */
+.sidebar a,
+.sidebar a:link,
+.sidebar a:visited,
+.sidebar a:hover,
+.sidebar a:focus,
+.sidebar a:active,
+.sidebar .side-link,
+.sidebar button.side-link,
+.sidebar .side-link span,
+.sidebar .side-link strong {
+  color:#222 !important;
 }
