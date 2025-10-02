@@ -551,3 +551,49 @@
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0,0,0,.06);
 }
+
+/* =======================
+   HOTFIX COLORES & TIPOS
+   ======================= */
+
+/* 0) Arreglo tipografía global (evita el bloque anidado) */
+html, body { font-family: var(--font-sans) !important; }
+
+/* 1) Sidebar: texto de los botones SIEMPRE en negro
+      (mantén el título en guinda) */
+.sidebar h1, .sidebar h2, .sidebar h3 { color: var(--guinda) !important; }
+
+.sidebar a { color: inherit; } /* resetea regla vieja */
+.sidebar a,
+.sidebar a:link,
+.sidebar a:visited,
+.sidebar a:hover,
+.sidebar a:focus,
+.sidebar a:active,
+.sidebar .side-link,
+.sidebar button.side-link,
+.sidebar .side-link *,
+.sidebar .side-link > span {
+  color: #222 !important;
+}
+
+/* 2) “Sesión: …” y título de Iniciativa en NEGRO con serif */
+#asuntoActual,
+#vista-iniciativa h3,
+.session-name, #sessionName, #previewSesion,
+.asunto-name {
+  color: #222 !important;
+  font-family: var(--font-serif) !important;
+  font-weight: 800 !important;
+  letter-spacing: .2px;
+}
+
+/* 3) Lista de comisiones en GUINDA */
+#com-lista label,
+.lista-comisiones label { color: var(--guinda) !important; font-weight: 600; }
+
+#com-lista input[type="checkbox"],
+.lista-comisiones input[type="checkbox"] { accent-color: var(--guinda); }
+
+/* 4) Búsqueda de comisión en guinda (borde) */
+#com-buscar { border-color: var(--guinda) !important; }
