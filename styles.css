@@ -6,9 +6,6 @@ body {
   color: #800000; /* TEXTO GUINDA */
   text-align: center;
   animation: fadeIn 0.7s ease forwards;
-  background: linear-gradient(-45deg, #ffffff, #fceeee, #fff9f9, #fceeee);
-  background-size: 400% 400%;
-  animation: fondoAnimado 15s ease infinite;
 }
 
 .hidden { display: none !important }
@@ -261,9 +258,7 @@ li.asunto-item {
   to   { opacity: 1; }
 }
 
-body {
-  background: #fff6f6 !important;  /* fondo rosita fijo */
-}
+
 
 /* 🔐 Centramos el login */
 #login {
@@ -1036,37 +1031,21 @@ li.asunto-item{ list-style:none; }
 /* Oculta el título duplicado dentro del panel principal  */
 .page-panel > .titulo-general { display: none !important; }
 
-
-body {
-  background-color: #fff6f6; /* tu colorcito */
-  min-height: 100vh;
-}
-
 /* 1) Color de fondo global  */
 html, body {
-  background: #fff6f6 !important;   /* rosita */
+  background: #fbbebe !important;   /* rosita */
   min-height: 100vh;
 }
 
 /* 2) El contenedor de partículas también debe ser rosita <3 */
 #particles-js,
 #particles-js canvas {
-  background: #fff6f6 !important;
+  background: transparent !important;
 }
-
 /* 3)  que el contenido quede por encima del canvas */
 .login-page, .main, .sidebar {
   position: relative;
   z-index: 1;
-}
-
-
-
-
-/* 1) Fondo global rosita (gana a lo anterior) */
-html, body {
-  background: #fff6f6 !important;  /* rosita */
-  min-height: 100vh;
 }
 
 /* 2) El contenedor de partículas va fuera del flujo y transparente */
