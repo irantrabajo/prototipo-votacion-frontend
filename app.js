@@ -866,12 +866,9 @@ async function votar(did, voto) {
   }
 }
 
-// —————————————————————————
-// Resultados + Gráfica
-// —————————————————————————
-// —————————————————————————
+
 // Resultados + Gráfica (versión “card + stats”)
-// —————————————————————————
+
 async function cargarResultados() {
   const sid   = sessionStorage.getItem(K_SID);
   const aid   = sessionStorage.getItem(K_AID);
@@ -902,23 +899,26 @@ async function cargarResultados() {
   // Cabeceras y totales con la grilla .card + .stats
   const cont = document.getElementById('resumenSesion');
   cont.innerHTML = `
-    <div class="card" style="margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:6px;">Sesión</div>
-      <div>${nameS}</div>
-    </div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:6px;">Sesión</div>
+    <div>${nameS}</div>
+  </div>
 
-    <div class="card" style="margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:6px;">Asunto ${roman}</div>
-      <div>${nameA}</div>
-    </div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:6px;">Asunto ${roman}</div>
+    <div class="longtext">${nameA}</div>   <!-- 👈 gris, sin negritas -->
+  </div>
 
-    <div class="stats">
-      <div class="stat"><div class="k">${d.a_favor||0}</div><div class="label">A favor</div></div>
-      <div class="stat"><div class="k">${d.en_contra||0}</div><div class="label">En contra</div></div>
-      <div class="stat"><div class="k">${d.abstenciones||0}</div><div class="label">Abstenciones</div></div>
-      <div class="stat"><div class="k">${d.ausente||0}</div><div class="label">Ausente</div></div>
-    </div>
-  `;
+  <div class="stats">
+    <div class="stat"><div class="k">${d.a_favor||0}</div><div class="label">A favor</div></div>
+    <div class="stat"><div class="k">${d.en_contra||0}</div><div class="label">En contra</div></div>
+    <div class="stat"><div class="k">${d.abstenciones||0}</div><div class="label">Abstenciones</div></div>
+    <div class="stat"><div class="k">${d.ausente||0}</div><div class="label">Ausente</div></div>
+  </div>
+`;
+
+const axisColor = '#7a2a2a';             // guinda suavizado para números/texto de ejes
+const gridColor = 'rgba(128,0,0,0.10)';  // guinda MUY tenue para la cuadrícula
 
   // Gráfica dentro de su card (el canvas ya existe en el HTML)
   const cnv = document.getElementById('chartResumen');
@@ -934,37 +934,47 @@ async function cargarResultados() {
       datasets: [{
         label: 'Votos',
         data: [d.a_favor, d.en_contra, d.abstenciones, d.ausente],
-        backgroundColor: 'rgba(128,0,0,0.8)'
+        backgroundColor: 'rgba(128,0,0,0.85)', // barras en guinda
+        borderRadius: 4
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { font: { size: 14 } } },
+        legend: {
+          labels: {
+            color: axisColor,             // color del texto de la leyenda
+            font: { size: 14, weight: '600' }
+          }
+        },
         title: { display: false }
       },
       scales: {
-        x: { ticks: { font: { size: 12 } } },
-        y: { beginAtZero: true, ticks: { font: { size: 12 } } }
+        x: {
+          ticks: {
+            color: axisColor,             // números/labels del eje X en guinda suave
+            font: { size: 12, weight: '700' }
+          },
+          grid: {
+            color: gridColor,             // líneas de la cuadrícula en guinda muy tenue
+            drawBorder: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: axisColor,             // números del eje Y en guinda suave
+            font: { size: 12, weight: '700' }
+          },
+          grid: {
+            color: gridColor,
+            drawBorder: false
+          }
+        }
       }
     }
-  });
-
-  // Mostrar/ocultar botones Siguiente/Terminar
-  const btn = document.getElementById('botonSiguienteAsunto');
-  btn.classList.add('hidden');
-  const btnFin = document.getElementById('botonTerminarSesion');
-  btnFin.classList.add('hidden');
-
-  const total = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]').length;
-  if (index + 1 < total) btn.classList.remove('hidden');
-  else btnFin.classList.remove('hidden');
-
-  // 👉 SOLO mostrar las acciones de la **sesión** en el ÚLTIMO asunto
-  const accionesSesion = document.getElementById('accionesSesion');
-  if (accionesSesion) accionesSesion.classList.toggle('hidden', index + 1 < total);
-
+  }); 
 }
 
 // —————————————————————————
@@ -1913,7 +1923,6 @@ function finalizarSesionParlamentaria(){
 // Exponer funciones al DOM
 window.confirmarOrden     = confirmarOrden;
 window.guardarSesion      = guardarSesion;
-window.guardarAsunto      = guardarAsunto;
 window.votar              = votar;
 window.cargarDiputados    = cargarDiputados;
 window.cargarResultados   = cargarResultados;
