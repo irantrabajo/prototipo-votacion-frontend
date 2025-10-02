@@ -1103,3 +1103,9 @@ html, body {
 .page-panel {
   margin: 16px auto !important;
 }
+
+/* evita scroll interno en el layout principal */
+.main { overflow: visible !important; height: auto !important; }
+
+/* sin scroll suave global: queremos control determinista */
+html { scroll-behavior: auto !important; }
