@@ -901,12 +901,12 @@ async function cargarResultados() {
   cont.innerHTML = `
   <div class="card" style="margin-bottom:12px;">
     <div class="section-title" style="margin-bottom:6px;">Sesión</div>
-    <div class="session-name"><strong>${nameS}</strong></div>
+    <div class="session-name">${nameS}</div>
   </div>
 
   <div class="card" style="margin-bottom:12px;">
     <div class="section-title" style="margin-bottom:6px;">Asunto ${roman}</div>
-    <div class="asunto-name"><strong>${nameA}</strong></div>
+    <div class="asunto-name">${nameA}</div>
   </div>
 
   <div class="stats">

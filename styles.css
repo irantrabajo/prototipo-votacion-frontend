@@ -553,3 +553,35 @@
 
 /* (si existía) desactiva la clase longtext gris que pusimos antes */
 .longtext{ font-weight: 700; color: var(--guinda); } /* o elimínala */
+
+
+/* ——— Sesión y Asunto (encabezados de contenido) ——— */
+.session-name,
+.asunto-name{
+  font-weight: 700;               /* negritas */
+  color: var(--guinda);
+  letter-spacing: .2px;
+}
+
+/* Por si en algún momento no se agregaran las clases,
+   fuerza negrita al primer DIV que sigue al .section-title dentro de .card */
+#resumenSesion .card .section-title + div{
+  font-weight: 700;
+  color: var(--guinda);
+}
+
+/* Menú superior con serif formal */
+.site-topbar,
+.site-topbar a{
+  font-family: "Merriweather", serif !important;
+  font-weight: 700;                 /* como en tu tercera captura */
+  letter-spacing: .2px;
+}
+
+/* Si el menú superior no tiene clase, puedes usar selectores comunes de navegación (ajusta según tu HTML real) */
+header nav, header nav a,
+.navbar, .navbar a, .main-menu a {
+  font-family: "Merriweather", serif;
+}
+
+
