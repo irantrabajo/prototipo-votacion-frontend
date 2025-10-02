@@ -1067,3 +1067,39 @@ html, body {
 
 html, body { overflow: auto; }
 .main, .login-page, .page-panel { overflow: visible; }
+
+/* Fondo rosita global */
+html, body {
+  background: #fbbebe !important;
+  min-height: 100vh;
+}
+
+/* Evitar que .main sea contenedor scrolleable */
+.main {
+  margin-left: 240px;
+  padding: 16px;
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;   /* ← clave */
+}
+
+/* Partículas transparentes y al fondo (por si las usas) */
+#particles-js,
+#particles-js canvas {
+  background: transparent !important;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Asegurar contenido por encima de partículas */
+.login-page, .main, .sidebar, .page-panel {
+  position: relative;
+  z-index: 1;
+}
+
+/* Tarjeta principal sin mega-espacios arriba */
+.page-panel {
+  margin: 16px auto !important;
+}

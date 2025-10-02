@@ -853,26 +853,26 @@ function filtrarDiputados() {
 // —————————————————————————
 // Router de secciones
 // —————————————————————————
+// —————————————————————————
+// Router de secciones
+// —————————————————————————
 function showSection(id) {
-  // 🔒 Bloqueo: no dejar entrar a "resultados" si aún no hay votación
+  // Bloqueo de "resultados" si no hay votación
   if (id === 'resultados') {
     const aid = sessionStorage.getItem('asunto_id');
     const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
     if (!aid && (!Array.isArray(arr) || arr.length === 0)) return;
   }
 
-  const secciones = [
-    'uploadOrden',
-    'confirmarOrden',
-    'sesion',
-    'asunto',
-    'diputados',
-    'resultados',
-    'historial',
-    'sesionesPasadas',
-    'vistaEdicion'
-  ];
+  // Quita el foco de lo que esté activo (para que no autodesplace)
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 
+  const secciones = [
+    'uploadOrden','confirmarOrden','sesion','asunto',
+    'diputados','resultados','historial','sesionesPasadas','vistaEdicion'
+  ];
   secciones.forEach(s => {
     const el = document.getElementById(s);
     if (el) el.classList.toggle('hidden', s !== id);
@@ -881,7 +881,6 @@ function showSection(id) {
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = 'block';
 
-  // Side-effects por sección
   if (id === 'resultados') marcarAusentes().then(cargarResultados);
   if (id === 'sesionesPasadas') cargarSesionesPasadas();
   if (id === 'historial') {
@@ -894,20 +893,47 @@ function showSection(id) {
   }
   if (id === 'sesion') cargarSesionesSubidas();
 
-  // ——— Scroll al tope (con fallback) ———
+  // —— FORZAR scroll al tope (con varios fallbacks) ——
   const target = document.getElementById(id);
+  // 1) dos rAF para asegurar reflow de la UI
   requestAnimationFrame(() => {
-    if (target?.scrollIntoView) {
-      // centra el inicio de la sección arriba
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    }
-    // Fallbacks por si el navegador ignora lo anterior
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    requestAnimationFrame(() => {
+      if (target?.scrollIntoView) {
+        target.scrollIntoView({ behavior: 'auto', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      }
+      // 2) fallbacks directos
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      // 3) un timeout 0 por si el navegador ignora los rAF
+      setTimeout(() => { window.scrollTo(0, 0); }, 0);
+    });
   });
+  // --- SIEMPRE volver al tope al cambiar de sección ---
+requestAnimationFrame(() => {
+  // Ventana
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+  // Failsafes por si el scroll vive en un contenedor (ej. .main)
+  const scrollers = [
+    document.scrollingElement,
+    document.documentElement,
+    document.body,
+    document.querySelector('.main'),
+    document.querySelector('#uploadOrden'),
+    document.querySelector('#confirmarOrden'),
+    document.querySelector('#sesion'),
+    document.querySelector('#asunto'),
+    document.querySelector('#diputados'),
+    document.querySelector('#resultados'),
+    document.querySelector('#sesionesPasadas'),
+    document.querySelector('#historial')
+  ];
+  scrollers.forEach(el => { if (el && typeof el.scrollTop === 'number') el.scrollTop = 0; });
+});
 }
+
 // —————————————————————————
 // Sesiones pasadas / edición simple
 // —————————————————————————
