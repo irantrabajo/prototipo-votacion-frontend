@@ -393,10 +393,10 @@ li.asunto-item {
   z-index: 1000;
 }
 
-.main{
+.main {
   margin-left: 240px;   /* deja espacio para la sidebar */
   padding: 16px;
-  min-height: 100vh;
+  min-height: auto;     /* 👈 ya no ocupa todo el alto forzado */
 }
 
 /* Anula la regla "button { width:90% }" SOLO dentro de la lista */
