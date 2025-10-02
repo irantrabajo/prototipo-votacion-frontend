@@ -9,7 +9,7 @@
      min-height: 100vh;
      background: #fbbebe;           /* rosita global */
      font-family: 'Poppins', sans-serif;
-     color: var(--guinda);
+     color:#2b2b2b;
      text-align: center;
      animation: fadeIn 0.7s ease forwards;
      scroll-behavior: auto;          /* determinista */
@@ -551,9 +551,6 @@
   font-weight: 700;            /* ← negritas */
 }
 
-/* (si existía) desactiva la clase longtext gris que pusimos antes */
-.longtext{ font-weight: 700; color: var(--guinda); } /* o elimínala */
-
 
 /* ——— Sesión y Asunto (encabezados de contenido) ——— */
 .session-name,
@@ -584,4 +581,35 @@ header nav, header nav a,
   font-family: "Merriweather", serif;
 }
 
+/* --- FIX: textos largos en negro + Merriweather negrita --- */
+.longtext{
+  color:#2b2b2b !important;
+  font-family:'Merriweather', serif !important;
+  font-weight:700 !important;
+  line-height:1.45;
+}
 
+/* Debajo del título dentro de cada card (Sesión / Asunto) */
+#resumenSesion .card .section-title + div{
+  color:#2b2b2b !important;
+  font-family:'Merriweather', serif !important;
+  font-weight:700 !important;
+}
+
+/* Banner en la vista de Diputados */
+#asuntoActual{
+  color:#2b2b2b !important;
+  font-family:'Merriweather', serif !important;
+  font-weight:700 !important;
+}
+
+/* Menú superior (si es tuyo) en Merriweather */
+header nav, header nav a,
+.navbar, .navbar a, .main-menu a,
+.site-topbar, .site-topbar a{
+  font-family:'Merriweather', serif !important;
+  font-weight:700 !important;
+}
+
+/* Los links del sidebar mantienen guinda */
+.sidebar .side-link{ color:var(--guinda); }
