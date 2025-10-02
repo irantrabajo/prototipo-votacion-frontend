@@ -8,6 +8,12 @@ const K_ANAME      = 'nombre_asunto';
 const K_FULL       = 'resumen_sesion_full';
 const K_ASUNTO_CNT = 'asunto_count';
 
+// === Estado de la sesión y previa editable ===
+let SESION_ID = null;
+let SESION_NOMBRE = '';
+let ASUNTOS_ORIG = [];   // [{id, asunto}, ...] tal como vienen de la BD
+let ASUNTOS_EDIT = [];   // copia editable para la previa (mantiene id cuando exista)
+
 // Backend detrás de CloudFront
 const backend = 'https://d32cz7avp3p0jh.cloudfront.net';
 
@@ -259,40 +265,38 @@ async function procesarSesion(sesionId, nombreCodificado) {
   try {
     const r = await fetch(`${backend}/api/asuntos?sesion_id=${sesionId}`);
     const raw = await r.json();
-
-    // Normaliza: objetos {id, asunto} o strings → a objetos
-    asuntos = (Array.isArray(raw) ? raw : []).map(a => {
-      if (typeof a === 'string') return { id: null, asunto: a };
-      return { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' };
-    }).filter(x => x.asunto);
+    asuntos = (Array.isArray(raw) ? raw : [])
+      .map(a => (typeof a === 'string')
+        ? { id: null, asunto: a }
+        : { id: a?.id ?? null, asunto: a?.asunto ?? a?.texto ?? a?.titulo ?? '' })
+      .filter(x => x.asunto);
   } catch (e) {
     console.error('procesarSesion:', e);
   }
 
-  // Guarda para navegación posterior
+  // 1.1) Fallback: si la BD aún no tiene asuntos, usa los detectados al subir
+  if (!asuntos.length) {
+    const tmp = JSON.parse(sessionStorage.getItem('asuntos_detectados_tmp') || '[]');
+    if (Array.isArray(tmp) && tmp.length) {
+      asuntos = tmp.map(t => ({ id: null, asunto: String(t) }));
+    }
+  }
+
+  // 2) Guarda para navegación posterior (select / siguiente asunto)
   sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
   sessionStorage.setItem('asunto_index', '0');
 
-  // 2) Llena el <select> de la sección "Asunto"
-  const sel = document.getElementById('listaAsuntos');
-  if (sel) {
-    sel.innerHTML = asuntos.map(a => 
-      `<option value="${a.id ?? ''}">${a.asunto}</option>`
-    ).join('');
-  }
-
-  // 3) Pinta encabezado de la previa
+  // 3) Encabezado de la previa + LISTA EDITABLE con ❌ y números romanos
   const p = document.getElementById('previewSesion');
   if (p) p.innerText = `Sesión: ${nombre}`;
+  listaAsuntos = asuntos.map(a => a.asunto);
+  renderizarAsuntos(); // 👈 AQUÍ se dibuja la lista que quieres
 
-  // 4) Botón "Continuar" → ir a la sección "Asunto"
-  const btnConfirm = document.querySelector('#confirmarOrden .actions button:first-child');
-  if (btnConfirm) {
-    btnConfirm.textContent = 'Continuar';
-    btnConfirm.onclick = () => showSection('asunto');
-  }
+  // (Opcional) también llenamos el select por compatibilidad
+  const sel = document.getElementById('listaAsuntos');
+  if (sel) sel.innerHTML = asuntos.map(a => `<option value="${a.id ?? ''}">${a.asunto}</option>`).join('');
 
-  // 5) Mostrar la previa (sin lista aquí; la lista vive en "Asunto")
+  // 4) Mostrar la previa “confirmarOrden”
   showSection('confirmarOrden');
   document.getElementById('confirmarOrden')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -327,34 +331,34 @@ async function cargarAsuntosDeSesion(sesionId) {
   }
 }
 
-// —————————————————————————
-// 1) Renderizar la lista numerada de asuntos
-// —————————————————————————
-function renderizarAsuntos() {
-  const ul = document.getElementById('previewAsuntos');
-  if (!ul) return; 
-  ul.innerHTML = '';
-
-  listaAsuntos.forEach((texto, i) => {
-    const roman = toRoman(i + 1);
-    const li = document.createElement('li');
-    li.className = 'asunto-item';
-    li.innerHTML = `
-      <div class="punto-rojo"></div>
-      <div class="caja-asunto">
-        <span style="font-weight:bold; color:#800000;">${roman}.</span>
-        ${texto}
-      </div>
-      <button onclick="eliminarAsunto(${i})">❌</button>
-    `;
-    ul.appendChild(li);
-  });
+// Números romanos
+function toRoman(num){
+  const map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  let out = '';
+  for (const [v,s] of map) while (num >= v){ out += s; num -= v; }
+  return out;
 }
 
-// —————————————————————————
-function eliminarAsunto(index) {
-  listaAsuntos.splice(index, 1);
-  renderizarAsuntos();
+function renderizarPreviaAsuntos(){
+  // Cabecera
+  const p = document.getElementById('previewSesion');
+  if (p) p.textContent = `Sesión: ${SESION_NOMBRE || '(sin nombre)'}`;
+
+  // Lista editable
+  const ul = document.getElementById('previewAsuntos');
+  if (!ul) return;
+  ul.innerHTML = ASUNTOS_EDIT.map((a,i) => `
+    <li class="asunto-item">
+      <div class="punto-rojo"></div>
+      <div class="caja-asunto"><b>${toRoman(i+1)}.</b> ${a.asunto}</div>
+      <button type="button" onclick="eliminarAsuntoPrevio(${i})">✖</button>
+    </li>
+  `).join('');
+}
+
+function eliminarAsuntoPrevio(idx){
+  ASUNTOS_EDIT.splice(idx,1);
+  renderizarPreviaAsuntos();
 }
 
 // —————————————————————————
@@ -374,68 +378,46 @@ function toRoman(num) {
 // —————————————————————————
 // Confirmar Orden: crear sesión + asuntos (bulk)
 // —————————————————————————
-async function confirmarOrden() {
-  const baseNombre =
-    sessionStorage.getItem('sesion_nombre_original') || // prioridad: nombre del PDF (sin .pdf)
-    document.getElementById('previewSesion').innerText.replace('Sesión: ', '').trim() ||
-    'Sesión';
+async function confirmarOrden(){
+  try {
+    if (!SESION_ID) {
+      alert('No hay sesión activa.');
+      return;
+    }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const sesionTxt = `${baseNombre} — ${timestamp}`;
+    // ids originales vs ids que quedaron
+    const origIds = new Set(ASUNTOS_ORIG.filter(a => a.id).map(a => a.id));
+    const keepIds = new Set(ASUNTOS_EDIT.filter(a => a.id).map(a => a.id));
+    const toDelete = [...origIds].filter(id => !keepIds.has(id));
 
-  const resS = await fetch(`${backend}/api/sesion`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre: sesionTxt })
-  });
+    // 1) Borrar en BD los que eliminaste en la previa
+    await Promise.all(toDelete.map(id =>
+      fetch(`${backend}/api/asunto/${id}`, { method: 'DELETE' })
+    ));
 
-  if (!resS.ok) {
-    const err = await resS.text();
-    alert("Error al crear sesión: " + err);
-    return;
-  }
+    // 2) Recargar lista definitiva desde BD
+    const r = await fetch(`${backend}/api/asuntos?sesion_id=${SESION_ID}`);
+    const finales = await r.json(); // [{id, asunto}, ...]
 
-  const { sesion_id } = await resS.json();
-  if (!sesion_id) {
-    alert("No se obtuvo el ID de la sesión. Verifica el backend.");
-    return;
-  }
-
-  sessionStorage.setItem(K_SID, sesion_id);
-  sessionStorage.setItem(K_SNAME, sesionTxt);
-
-  // 🚀 bulk
-  const resA = await fetch(`${backend}/api/asuntos/bulk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sesion_id, asuntos: listaAsuntos })
-  });
-
-  if (!resA.ok) {
-    const err = await resA.text();
-    console.error("❌ Error al enviar asuntos (bulk):", err);
-    alert("Error al enviar asuntos: " + err);
-    return;
-  }
-
-  const asuntos = await resA.json(); // [{id, asunto}, …]
-  if (asuntos.length > 0) {
-    sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
+    // Guarda en sessionStorage para el flujo de votación
+    sessionStorage.setItem('asuntos_array', JSON.stringify(finales));
     sessionStorage.setItem('asunto_index', '0');
-    sessionStorage.setItem(K_AID, asuntos[0].id);
-    sessionStorage.setItem(K_ANAME, asuntos[0].asunto);
-    actualizarAsuntoActual();
-  } else {
-    alert("No se encontraron asuntos después de crearlos.");
-  }
 
-  updateResultadosLinkVisibility();
-  sessionStorage.setItem(K_ASUNTO_CNT, String(asuntos.length));
-  VOTADOS.clear();
-  const busc = document.getElementById('buscadorDiputado');
-  if (busc) busc.value = '';
-  showSection('diputados');
-  cargarDiputados();
+    if (finales.length) {
+      sessionStorage.setItem(K_AID, String(finales[0].id));
+      sessionStorage.setItem(K_ANAME, finales[0].asunto);
+      actualizarAsuntoActual();
+      // Si quieres seguir usando el <select> para arrancar:
+      const sel = document.getElementById('listaAsuntos');
+      if (sel) sel.innerHTML = finales.map(a => `<option value="${a.id}">${a.asunto}</option>`).join('');
+    }
+
+    // 3) Pasar a “Selecciona un Asunto” para iniciar
+    showSection('asunto');
+  } catch (e) {
+    console.error('confirmarOrden:', e);
+    alert('Error confirmando la orden.');
+  }
 }
 
 
@@ -1653,7 +1635,6 @@ function iniciarSesionDesdeSelect() {
 
 // Exponer funciones al DOM
 window.confirmarOrden     = confirmarOrden;
-window.eliminarAsunto     = eliminarAsunto;
 window.guardarSesion      = guardarSesion;
 window.guardarAsunto      = guardarAsunto;
 window.votar              = votar;
@@ -1685,3 +1666,7 @@ window.filtrarListaSesiones = filtrarListaSesiones;
 
 // (opcional) por compatibilidad temporal:
 window.uploadOrden = subirOrden;
+window.renderizarPreviaAsuntos = renderizarPreviaAsuntos;
+window.eliminarAsuntoPrevio    = eliminarAsuntoPrevio;
+// ya expones confirmarOrden:
+window.confirmarOrden          = confirmarOrden;

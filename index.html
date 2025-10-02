@@ -5,21 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Prototipo de Votación</title>
 
+  <!-- build: 2025-10-01-01 -->
+
   <!-- Tu CSS -->
-  <link rel="stylesheet" href="./styles.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css?v=20250925a"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
-  <!-- Librerías externas -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<!-- Librerías externas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
-  <!-- Tu lógica JS -->
-  <script src="./app.js" defer></script>
+<!-- Tu lógica JS -->
+<script src="./app.js?v=20250925a" defer></script>
 </head>
 <body>
+
   <div id="particles-js"></div>
 
   <!-- 🔐 LOGIN PAGE -->
@@ -57,13 +60,8 @@
     <a onclick="showSection('sesionesPasadas')">Sesiones Pasadas</a>
   </div>
 
-  <div class="main">
+  <div class="main hidden">
     <div class="page-panel">
-
-    <h1 class="titulo-general">
-      Dirección de Enlace Legislativo<br>
-      <span>Sistema de Votación Parlamentaria</span>
-    </h1>
 
     <!-- 0) Carga Orden del Día -->
     <section id="uploadOrden" class="hidden">
@@ -84,17 +82,20 @@
       <button onclick="iniciarApp()">Comenzar</button>
     </section>
 
-    <!-- 0.1) Confirmar Orden del Día (previa editable) -->
-  <section id="confirmarOrden" class="hidden">
-    <h2>🧾 Orden detectada</h2>
-    <p id="previewSesion" style="margin:.4rem 0 1rem; font-weight:600; color:#800000;">
-      Sesión:
-    </p>
+   <!-- 0.1) Confirmar Orden del Día (previa editable) -->
+<section id="confirmarOrden" class="hidden">
+  <h2>🧾 Orden detectada</h2>
 
-    <ol id="previewAsuntos" class="lista-asuntos"></ol>
+  <p id="previewSesion" style="margin:.4rem 0 1rem; font-weight:600; color:#800000;">
+    Sesión:
+  </p>
+
+  <!-- LISTA DE ASUNTOS EDITABLE -->
+  <ol id="previewAsuntos" class="lista-asuntos"></ol>
 
   <div class="actions" style="margin-top:12px;">
-    <button onclick="confirmarOrden()">✔️ Confirmar Orden</button>
+    <!-- 👉 Botón único que confirma e inicia la votación -->
+    <button class="full" onclick="confirmarOrden()">✅ Confirmar e iniciar votación</button>
     <button onclick="showSection('uploadOrden')">↩️ Volver</button>
   </div>
 </section>
@@ -105,6 +106,7 @@
       <h2>🗃️ Sesiones subidas</h2>
     
       <div style="margin:10px 0 14px;">
+        
         <input id="buscadorSes" type="search"
                placeholder="Buscar por usuario o nombre…"
                oninput="filtrarListaSesiones()"
