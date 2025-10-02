@@ -889,7 +889,15 @@ function showSection(id) {
   if (id === 'sesion') {
     cargarSesionesSubidas();
   }
-}
+    // --- SIEMPRE subir al tope al cambiar de sección ---
+    requestAnimationFrame(() => {
+      // usa 'smooth' si prefieres animado
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      // failsafe por si algún navegador ignora lo de arriba
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+  }
 // —————————————————————————
 // Sesiones pasadas / edición simple
 // —————————————————————————
