@@ -536,3 +536,20 @@
 /* Botón gris de “siguiente” ya lo hiciste guinda; aseguramos hover */
 .btn-guinda{ background:var(--guinda); color:#fff; border:none; }
 .btn-guinda:hover{ background:#a00000; }
+
+/* === Vista Iniciativa === */
+#vista-iniciativa h3{
+  margin-top: 0;
+  color: #800000;
+  font-weight: 800;            /* ← ahora en negritas */
+  letter-spacing: .2px;
+}
+
+/* === Resultados: resalta sesión y asunto === */
+#resumenSesion .session-name,
+#resumenSesion .asunto-name{
+  font-weight: 700;            /* ← negritas */
+}
+
+/* (si existía) desactiva la clase longtext gris que pusimos antes */
+.longtext{ font-weight: 700; color: var(--guinda); } /* o elimínala */
