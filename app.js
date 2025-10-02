@@ -8,6 +8,12 @@ const K_ANAME      = 'nombre_asunto';
 const K_FULL       = 'resumen_sesion_full';
 const K_ASUNTO_CNT = 'asunto_count';
 
+
+const SID   = () => sessionStorage.getItem(K_SID);
+const AID   = () => sessionStorage.getItem(K_AID);
+const SNAME = () => sessionStorage.getItem(K_SNAME);
+const ANAME = () => sessionStorage.getItem(K_ANAME);
+
 // === Estado de la sesión y previa editable ===
 let SESION_ID = null;
 let SESION_NOMBRE = '';
@@ -17,6 +23,8 @@ let ASUNTOS_EDIT = [];   // copia editable para la previa (mantiene id cuando ex
 // Backend detrás de CloudFront
 const backend = 'https://d32cz7avp3p0jh.cloudfront.net';
 
+// Usa la misma base que ya usas:
+const API = `${backend}/api`;
 
 const VOTADOS = new Set(); // ← aquí, global
 
@@ -293,11 +301,11 @@ async function procesarSesion(sesionId, nombreCodificado) {
   sessionStorage.setItem('asuntos_array', JSON.stringify(asuntos));
   sessionStorage.setItem('asunto_index', '0');
 
-  // 3) Encabezado de la previa + LISTA EDITABLE con ❌ y números romanos
+  
   const p = document.getElementById('previewSesion');
   if (p) p.innerText = `Sesión: ${nombre}`;
   listaAsuntos = asuntos.map(a => a.asunto);
-  renderizarAsuntos(); // 👈 AQUÍ se dibuja la lista que quieres
+  renderizarAsuntos(); // 
 
   // (Opcional) también llenamos el select por compatibilidad
   const sel = document.getElementById('listaAsuntos');
@@ -345,6 +353,130 @@ function toRoman(num){
   for (const [v,s] of map) while (num >= v){ out += s; num -= v; }
   return out;
 }
+ // ===== Helpers para clasificar y extraer metadatos =====
+function clasificarTipoAsunto(t) {
+  const s = String(t || '').toLowerCase();
+  if (/\b(votaci[óo]n|se somete a votaci[óo]n|resultado de la votaci[óo]n)\b/.test(s)) return 'VOTACION';
+  if (/\b(iniciativa|se (remite|turna) a comisi[óo]n|proyecto de decreto|propuesta de decreto)\b/.test(s)) return 'INICIATIVA';
+  return s.includes('iniciativa') ? 'INICIATIVA' : 'VOTACION';
+}
+
+function extraerAutorYLey(texto) {
+  const t = String(texto || '');
+  const autor = (t.match(/diputad[oa]\s+([A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑ\s.'-]+)/i) || [])[1] || null;
+  const ley   = (t.match(/\b[Ll]ey\s+([A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑ\s.'-]+)/) || [])[1] || null;
+  return { autor, ley };
+}
+
+function aRomano(n){
+  const map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  let r=''; for(const [v,s] of map){ while(n>=v){ r+=s; n-=v; } } return r;
+}
+
+async function renderizarAsuntos(){
+  const ul = document.getElementById('previewAsuntos');
+  if (!ul) return;
+
+  // lee la lista vigente
+  let asuntos = [];
+  try { asuntos = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]'); }
+  catch {}
+
+  if (!Array.isArray(asuntos) || !asuntos.length) {
+    ul.innerHTML = `<li class="asunto-item"><div class="caja-asunto">Sin asuntos detectados.</div></li>`;
+    return;
+  }
+
+  ul.innerHTML = '';
+  asuntos.forEach((a, i) => {
+    const li = document.createElement('li');
+    li.className = 'asunto-item';
+    const titulo = a.asunto || a.texto || a.titulo || '';
+
+    // si backend aún no manda tipo/ordinal, calculamos en cliente
+    const ordinal = (a.ordinal && Number(a.ordinal)) || (i + 1);
+    const tipo    = a.tipo || clasificarTipoAsunto(titulo);
+
+    li.innerHTML = `
+      <div class="punto-rojo"></div>
+      <div class="caja-asunto">
+        <b>${aRomano(ordinal)}.</b> ${titulo}
+        <span style="margin-left:8px;border:1px solid #f0dcdc;border-radius:8px;padding:2px 6px">
+          ${tipo}
+        </span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn-open">Abrir</button>
+        <button type="button" class="btn-del" style="background:#fff;color:#a00000;border:1px solid #f4c7c7">Borrar</button>
+      </div>
+    `;
+
+    // Abrir (enrutamos por tipo)
+    li.querySelector('.btn-open').onclick = () => {
+      const sesionId = Number(sessionStorage.getItem('sesion_id') || sessionStorage.getItem(K_SID));
+      // armamos objeto asunto con lo necesario
+      const asuntoObj = {
+        id: a.id ?? null,
+        sesion_id: sesionId || null,
+        ordinal,
+        tipo,
+        titulo
+      };
+      abrirAsunto(asuntoObj, sesionId);
+    };
+
+    // Borrar
+    li.querySelector('.btn-del').onclick = async () => {
+      if (!confirm('¿Borrar este asunto?')) return;
+
+      const sesionId = Number(sessionStorage.getItem('sesion_id') || sessionStorage.getItem(K_SID));
+
+      if (a.id) {
+        // borrar en BD (renumera backend)
+        await fetch(`${API}/asunto/${a.id}`, { method: 'DELETE' }).catch(()=>{});
+        // refrescamos desde backend
+        const r = await fetch(`${API}/asuntos?sesion_id=${sesionId}`).catch(()=>null);
+        const nuevos = r ? await r.json() : [];
+        sessionStorage.setItem('asuntos_array', JSON.stringify(nuevos));
+      } else {
+        // solo en memoria (aún no existe en BD)
+        const lista = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+        lista.splice(i, 1);
+        sessionStorage.setItem('asuntos_array', JSON.stringify(lista));
+      }
+
+      renderizarAsuntos();
+    };
+
+    ul.appendChild(li);
+  });
+}
+
+let _COMISIONES_CACHE = null;
+async function getComisiones(){
+  if (_COMISIONES_CACHE) return _COMISIONES_CACHE;
+  const r = await fetch(`${API}/comisiones`);
+  _COMISIONES_CACHE = await r.json();
+  return _COMISIONES_CACHE;
+}
+function pintarComisiones(lista, precheck = []){
+  const cont = document.getElementById('com-lista');
+  if (!cont) return;
+  cont.innerHTML = '';
+  lista.forEach(c => {
+    const id = `com-${c.id}`;
+    const row = document.createElement('label');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+    row.style.padding = '4px 8px';
+    row.innerHTML = `
+      <input type="checkbox" value="${c.id}" id="${id}" ${precheck.includes(c.id)?'checked':''}/>
+      <span>${c.nombre}</span>
+    `;
+    cont.appendChild(row);
+  });
+}
 
 function renderizarPreviaAsuntos(){
   // Cabecera
@@ -368,18 +500,66 @@ function eliminarAsuntoPrevio(idx){
   renderizarPreviaAsuntos();
 }
 
-// —————————————————————————
-function toRoman(num) {
-  const map = [
-    [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],
-    [100,'C'],[90,'XC'],[50,'L'],[40,'XL'],
-    [10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']
-  ];
-  let result = '';
-  for (const [val,sym] of map) {
-    while (num >= val) { result += sym; num -= val; }
+async function mostrarVistaIniciativa(asunto, sesionId){
+  document.getElementById('ini-titulo').textContent = `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo}`;
+  const coms = await getComisiones();
+  pintarComisiones(coms);
+
+  const busc = document.getElementById('com-buscar');
+  busc.oninput = (e)=>{
+    const q = (e.target.value || '').toLowerCase();
+    const filt = coms.filter(c => c.nombre.toLowerCase().includes(q));
+    pintarComisiones(filt);
+  };
+
+  document.getElementById('vista-iniciativa').classList.remove('hidden');
+
+  // Guardar remisión (comisiones + opinión)
+  document.getElementById('ini-guardar').onclick = async ()=>{
+    if (!asunto.id) { alert('Aún no hay ID de asunto en BD.'); return; }
+    const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')].map(x=>parseInt(x.value,10));
+    const opinion = document.getElementById('ini-opinion').value || '';
+
+    const r = await fetch(`${API}/asuntos/${asunto.id}/remision`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ comisionesIds: ids, opinion })
+    });
+    if (!r.ok) { alert('No se pudo guardar la remisión'); return; }
+    alert('Remisión guardada ✅');
+  };
+
+  // Siguiente asunto (pide al backend el siguiente por ordinal)
+  document.getElementById('ini-siguiente').onclick = async ()=>{
+    const desde = asunto.ordinal || 0;
+    const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
+    const next = await r.json();
+    if (next) {
+      abrirAsunto(next, sesionId);
+    } else {
+      alert('No hay más asuntos.');
+      // puedes enviar a resultados o a sesión
+    }
+  };
+}
+
+async function abrirAsunto(asunto, sesionId){
+  // oculta vista iniciativa por si estaba abierta
+  const v = document.getElementById('vista-iniciativa');
+  if (v) v.classList.add('hidden');
+
+  if (asunto.tipo === 'INICIATIVA') {
+    await mostrarVistaIniciativa(asunto, sesionId);
+  } else {
+    // VOTACIÓN → usa tu flujo existente
+    // Asegura K_AID / K_ANAME y arranca
+    if (asunto.id) sessionStorage.setItem(K_AID, String(asunto.id));
+    sessionStorage.setItem(K_ANAME, asunto.titulo || '(Asunto)');
+    actualizarAsuntoActual();
+    VOTADOS.clear();
+    showSection('diputados');
+    cargarDiputados();
   }
-  return result;
 }
 
 // —————————————————————————
@@ -387,26 +567,13 @@ function toRoman(num) {
 // —————————————————————————
 async function confirmarOrden(){
   try {
-    if (!SESION_ID) {
-      alert('No hay sesión activa.');
-      return;
-    }
+    const sid = SID();
+    if (!sid) return alert('No hay sesión activa.');
 
-    // ids originales vs ids que quedaron
-    const origIds = new Set(ASUNTOS_ORIG.filter(a => a.id).map(a => a.id));
-    const keepIds = new Set(ASUNTOS_EDIT.filter(a => a.id).map(a => a.id));
-    const toDelete = [...origIds].filter(id => !keepIds.has(id));
+    // Recargar la lista definitiva desde BD
+    const r = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`);
+    const finales = await r.json();
 
-    // 1) Borrar en BD los que eliminaste en la previa
-    await Promise.all(toDelete.map(id =>
-      fetch(`${backend}/api/asunto/${id}`, { method: 'DELETE' })
-    ));
-
-    // 2) Recargar lista definitiva desde BD
-    const r = await fetch(`${backend}/api/asuntos?sesion_id=${SESION_ID}`);
-    const finales = await r.json(); // [{id, asunto}, ...]
-
-    // Guarda en sessionStorage para el flujo de votación
     sessionStorage.setItem('asuntos_array', JSON.stringify(finales));
     sessionStorage.setItem('asunto_index', '0');
 
@@ -414,12 +581,9 @@ async function confirmarOrden(){
       sessionStorage.setItem(K_AID, String(finales[0].id));
       sessionStorage.setItem(K_ANAME, finales[0].asunto);
       actualizarAsuntoActual();
-      // Si quieres seguir usando el <select> para arrancar:
       const sel = document.getElementById('listaAsuntos');
       if (sel) sel.innerHTML = finales.map(a => `<option value="${a.id}">${a.asunto}</option>`).join('');
     }
-
-    // 3) Pasar a “Selecciona un Asunto” para iniciar
     showSection('asunto');
   } catch (e) {
     console.error('confirmarOrden:', e);
@@ -474,26 +638,38 @@ async function guardarSesion() {
 
 // —————————————————————————
 async function guardarAsunto() {
-  const name = document.getElementById('listaAsuntos').value;
-  const sid  = sessionStorage.getItem(K_SID);
-  if (!sid || !name) return alert('Faltan datos.');
-  const res = await fetch(`${backend}/api/asunto`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ asunto: name, sesion_id: sid })
-  });
-  const { asunto_id } = await res.json();
-  sessionStorage.setItem(K_AID, asunto_id);
-  sessionStorage.setItem(K_ANAME, name);
+  const sel = document.getElementById('listaAsuntos');
+  const sid = SID();
+  if (!sid || !sel) return alert('Faltan datos.');
+
+  const selectedId   = sel.value;                                  // id del asunto si ya existe
+  const selectedText = sel.selectedOptions?.[0]?.text || '';        // texto del asunto
+
+  // Si ya existe en BD, no crees otro: solo selecciona y avanza a votar
+  if (selectedId) {
+    sessionStorage.setItem(K_AID, selectedId);
+    sessionStorage.setItem(K_ANAME, selectedText);
+  } else {
+    // Si no hay id (caso raro), créalo con el texto
+    const res = await fetch(`${backend}/api/asunto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asunto: selectedText, sesion_id: sid })
+    });
+    if (!res.ok) return alert('No se pudo crear el asunto.');
+    const { asunto_id } = await res.json();
+    sessionStorage.setItem(K_AID, String(asunto_id));
+    sessionStorage.setItem(K_ANAME, selectedText);
+  }
+
   actualizarAsuntoActual();
   updateResultadosLinkVisibility();
-  const cnt = parseInt(sessionStorage.getItem(K_ASUNTO_CNT) || '0', 10) + 1;
-  sessionStorage.setItem(K_ASUNTO_CNT, String(cnt));
-  VOTADOS.clear();  
-  const busc = document.getElementById('buscadorDiputado');
-if (busc) busc.value = '';
+  VOTADOS.clear();
+  const busc = document.getElementById('buscadorDiputado'); if (busc) busc.value = '';
   showSection('diputados');
   cargarDiputados();
 }
+
 // —————————————————————————
 // Cargar diputados
 // —————————————————————————
