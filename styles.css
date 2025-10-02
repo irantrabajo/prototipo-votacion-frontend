@@ -261,18 +261,8 @@ li.asunto-item {
   to   { opacity: 1; }
 }
 
-/* 💫 Fondo animado sutil */
 body {
-  background: linear-gradient(-45deg, #ffffff, #fceeee, #fff9f9, #fceeee);
-  background-size: 400% 400%;
-  animation: fondoAnimado 15s ease infinite;
-}
-
-/* 🔁 Animación */
-@keyframes fondoAnimado {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  background: #fff6f6 !important;  /* fondo rosita fijo */
 }
 
 /* 🔐 Centramos el login */
@@ -1096,5 +1086,4 @@ html, body {
   z-index: 1;
 }
 
-/* 4)  anula la animación de fondo previa sa */
-@keyframes fondoAnimado { from { } to { } }  
+
