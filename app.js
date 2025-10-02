@@ -430,11 +430,14 @@ async function abrirAsunto(asunto, sesionId){
   }
 
   if (a.tipo === 'VOTACION') {
-    // Guarda id/nombre del asunto activo
-    if (a.id) sessionStorage.setItem(K_AID, String(a.id));
-    sessionStorage.setItem(K_ANAME, a.titulo || '(Asunto)');
-
-    // Índice actual (por id y fallback por ordinal)
+    // Guarda id del asunto activo
+    if (a.id != null) sessionStorage.setItem(K_AID, String(a.id));
+  
+    // Nombre  del asunto (titulo || asunto || texto)
+    const nombreAsunto = (a.titulo || a.asunto || texto || '').trim() || '(Asunto)';
+    sessionStorage.setItem(K_ANAME, nombreAsunto);
+  
+    // Calcula índice actual (por id y fallback por ordinal)
     const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
     let idx = -1;
     if (a.id != null) idx = arr.findIndex(x => String(x.id) === String(a.id));
@@ -443,17 +446,26 @@ async function abrirAsunto(asunto, sesionId){
       idx = Math.max(0, Math.min(ord0, arr.length - 1));
     }
     sessionStorage.setItem('asunto_index', String(idx));
-
+  
+    // Ir a votar
     actualizarAsuntoActual();
     VOTADOS.clear();
     showSection('diputados');
     await cargarDiputados();
     return;
-  }
+  }  
 
   // NOTA / DISPENSA / LECTURAS
   await mostrarVistaNota(a, sesionId);
 }
+
+function actualizarAsuntoActual() {
+  const el = document.getElementById('asuntoActual');
+  if (!el) return;
+  const asunto = (sessionStorage.getItem(K_ANAME) || '').trim();
+  el.textContent = asunto ? `Asunto en votación: ${asunto}` : '';
+}
+
 
 function extraerAutorYLey(texto) {
   const t = String(texto || '');
