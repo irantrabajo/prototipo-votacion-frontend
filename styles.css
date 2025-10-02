@@ -521,3 +521,18 @@
 #botonTerminarSesion button:hover {
   background: #a00000;
 }
+
+/* Cuerpo de texto largo (gris, sin negritas) */
+.longtext{
+  color:#3a3a3a;          /* gris oscuro legible */
+  font-weight:500;        /* semibold suave, no bold */
+  line-height:1.45;
+}
+
+/* Títulos y números ya van en guinda; por coherencia: */
+.section-title,
+.stat .k { color: var(--guinda); }
+
+/* Botón gris de “siguiente” ya lo hiciste guinda; aseguramos hover */
+.btn-guinda{ background:var(--guinda); color:#fff; border:none; }
+.btn-guinda:hover{ background:#a00000; }
