@@ -107,9 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
   updateResultadosLinkVisibility(); // lo oculta al inicio
 });
 
+// 0) Desactiva la restauración automática de scroll del navegador
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+window.addEventListener('pageshow', () => {
+  // por si el navegador insiste al volver de bfcache
+  window.scrollTo(0, 0);
+});
 
 // —————————————————————————
-// 0) Lista global de textos de asuntos
+// 0.1) Lista global de textos de asuntos
 // —————————————————————————
 let listaAsuntos = [];
 
