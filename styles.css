@@ -359,4 +359,92 @@
      .tabla-sesiones .acciones{ gap:6px; }
      .tabla-sesiones .acciones .btn-link{ padding:7px 8px; font-size:.85rem; }
    }
+
+   /* === Confirmar Orden: lista de asuntos === */
+.lista-asuntos {
+  list-style: none;
+  padding-left: 0;
+  display: grid;
+  gap: .5rem;
+}
+.asunto-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  background: #fff;
+  border: 1px solid #f0dcdc;
+  border-radius: 10px;
+  padding: .6rem .75rem;
+}
+.punto-rojo {
+  width: 10px; height: 10px; flex: 0 0 10px;
+  border-radius: 999px; background: #b00020;
+}
+.caja-asunto { flex: 1; line-height: 1.35; }
+.asunto-item .btn-open, .asunto-item .btn-del {
+  border-radius: 8px; padding: .35rem .6rem; font-weight: 600; cursor: pointer;
+}
+.asunto-item .btn-open { background: #800000; color: #fff; border: none; }
+.asunto-item .btn-del  { background: #fff; color: #a00000; border: 1px solid #f4c7c7; }
+
+.actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.actions .full { flex: 1 1 260px; }
+
+/* === Vista Iniciativa === */
+#vista-iniciativa h3 { margin-top: 0; color: #800000; }
+#com-buscar {
+  width: 100%; max-width: 520px;
+  padding: .55rem .7rem; border: 2px solid #800000; border-radius: 10px;
+}
+.lista-comisiones label {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .35rem .5rem; border-bottom: 1px dashed #eee;
+}
+.lista-comisiones label:last-child { border-bottom: none; }
+#ini-opinion {
+  width: 100%; max-width: 740px;
+  border: 1px solid #e8e0e0; border-radius: 8px; padding: .5rem .6rem;
+}
+#ini-guardar, #ini-siguiente {
+  background: #800000; color: #fff; border: none;
+  padding: .5rem .8rem; border-radius: 10px; font-weight: 600; cursor: pointer;
+}
+#ini-siguiente { background: #5b5b5b; }
+
+/* === Resultados: tarjetas & stats === */
+.card.soft {
+  background: #fff; border: 1px solid #f0dcdc; border-radius: 12px; padding: 1rem;
+}
+.section-title { font-weight: 700; color: #800000; }
+.stats {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .5rem; margin-top: .6rem;
+}
+.stat {
+  background: #faf7f7; border: 1px solid #f0dcdc; border-radius: 10px;
+  padding: .6rem .5rem; text-align: center;
+}
+.stat .k { font-size: 1.4rem; font-weight: 700; }
+.stat .label { font-size: .9rem; color: #6b6b6b; }
+
+/* === Sesiones Pasadas: tabla & botones === */
+.tabla-sesiones th, .tabla-sesiones td {
+  border-bottom: 1px solid #f0dcdc; padding: .55rem .6rem;
+}
+.btn-link {
+  background: none; color: #800000; border: none; padding: 0;
+  cursor: pointer; text-decoration: underline; font-weight: 600;
+}
+.btn-danger { color: #a00000; }
+
+/* Utilidades */
+.hidden { display: none !important; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .asunto-item { align-items: flex-start; }
+}
+
    
