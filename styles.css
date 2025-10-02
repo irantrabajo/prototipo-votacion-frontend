@@ -1051,3 +1051,21 @@ body {
   background-color: #fff6f6; /* tu colorcito */
   min-height: 100vh;
 }
+
+/* 1) Color de fondo global  */
+html, body {
+  background: #fff6f6 !important;   /* rosita */
+  min-height: 100vh;
+}
+
+/* 2) El contenedor de partículas también debe ser rosita */
+#particles-js,
+#particles-js canvas {
+  background: #fff6f6 !important;
+}
+
+/* 3)  que el contenido quede por encima del canvas */
+.login-page, .main, .sidebar {
+  position: relative;
+  z-index: 1;
+}
