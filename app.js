@@ -677,6 +677,46 @@ async function avanzarAlSiguienteAsunto() {
   abrirAsunto(next, sid);
 }
 
+// GET remisión de un asunto: { comisiones:[{id,nombre}], opinion }
+async function obtenerRemision(asuntoId) {
+  if (!asuntoId) return { comisiones: [], opinion: '' };
+  try {
+    const r = await fetch(`${API}/asuntos/${asuntoId}/remision`);
+    if (!r.ok) throw 0;
+    const j = await r.json();
+    const comisiones = Array.isArray(j?.comisiones) ? j.comisiones : [];
+    const opinion = (j?.opinion || '').toString();
+    return { comisiones, opinion };
+  } catch {
+    return { comisiones: [], opinion: '' };
+  }
+}
+
+// GET nota de un asunto: { nota }
+async function obtenerNota(asuntoId) {
+  if (!asuntoId) return { nota: '' };
+  try {
+    const r = await fetch(`${API}/asuntos/${asuntoId}/nota`);
+    if (!r.ok) throw 0;
+    const j = await r.json();
+    return { nota: (j?.nota || '').toString() };
+  } catch {
+    // fallback local por si guardaste en sessionStorage
+    try {
+      const k = 'notas_asuntos';
+      const map = JSON.parse(sessionStorage.getItem(k) || '{}');
+      return { nota: (map?.[asuntoId] || '').toString() };
+    } catch { return { nota: '' }; }
+  }
+}
+
+// Normaliza el tipo (usa tu clasificarTipoAsunto por si acaso)
+function tipoDe(asunto) {
+  const t = asunto?.tipo || clasificarTipoAsunto(asunto?.asunto || asunto?.titulo || '');
+  return t || 'NOTA';
+}
+
+
 // —————————————————————————
 function iniciarApp() { showSection('uploadOrden'); }
 
@@ -829,60 +869,68 @@ async function cargarResultados() {
   const roman = toRoman(index + 1);
 
   if (!sid || !aid) {
-    console.warn(" No hay sesión o asunto activo.");
+    console.warn("No hay sesión o asunto activo.");
     return;
   }
 
-  const res = await fetch(`${backend}/api/resultados?sesion_id=${sid}&asunto_id=${aid}`);
-  let data;
+  let data = [];
   try {
+    const res = await fetch(`${backend}/api/resultados?sesion_id=${sid}&asunto_id=${aid}`);
     data = await res.json();
-    if (!Array.isArray(data)) throw new Error("No es un array");
+    if (!Array.isArray(data)) throw new Error("Formato inesperado");
   } catch (err) {
-    console.error(" Error al cargar resultados:", err);
+    console.error("Error al cargar resultados:", err);
     return;
   }
-  const d = data[0] || { a_favor:0, en_contra:0, abstenciones:0, ausente:0 };
 
-  // Cabeceras y totales con la grilla .card + .stats
+  // Mapea claves del backend a nuestras etiquetas
+  const raw = data[0] || {};
+  const d = {
+    a_favor:       Number(raw.a_favor || 0),
+    en_contra:     Number(raw.en_contra || 0),
+    abstenciones:  Number(raw.abstenciones || raw.abstencion || 0),
+    ausentes:      Number(raw.ausentes || raw.ausente || 0)
+  };
+
   const cont = document.getElementById('resumenSesion');
+  if (!cont) return;
+
   cont.innerHTML = `
-  <div class="card" style="margin-bottom:12px;">
-    <div class="section-title" style="margin-bottom:6px;">Sesión</div>
-    <div class="session-name">${nameS}</div>
-  </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:6px;">Sesión</div>
+      <div class="session-name">${nameS}</div>
+    </div>
 
-  <div class="card" style="margin-bottom:12px;">
-    <div class="section-title" style="margin-bottom:6px;">Asunto ${roman}</div>
-    <div class="asunto-name">${nameA}</div>
-  </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:6px;">Asunto ${roman}</div>
+      <div class="asunto-name">${nameA}</div>
+    </div>
 
-  <div class="stats">
-    <div class="stat"><div class="k">${d.a_favor||0}</div><div class="label">A favor</div></div>
-    <div class="stat"><div class="k">${d.en_contra||0}</div><div class="label">En contra</div></div>
-    <div class="stat"><div class="k">${d.abstenciones||0}</div><div class="label">Abstenciones</div></div>
-    <div class="stat"><div class="k">${d.ausente||0}</div><div class="label">Ausente</div></div>
-  </div>
-`;
+    <div class="stats">
+      <div class="stat"><div class="k">${d.a_favor}</div><div class="label">A favor</div></div>
+      <div class="stat"><div class="k">${d.en_contra}</div><div class="label">En contra</div></div>
+      <div class="stat"><div class="k">${d.abstenciones}</div><div class="label">Abstenciones</div></div>
+      <div class="stat"><div class="k">${d.ausentes}</div><div class="label">Ausentes</div></div>
+    </div>
+  `;
 
-const axisColor = '#7a2a2a';             // guinda suavizado para números/texto de ejes
-const gridColor = 'rgba(128,0,0,0.10)';  // guinda MUY tenue para la cuadrícula
+  const axisColor = '#7a2a2a';
+  const gridColor = 'rgba(128,0,0,0.10)';
 
-  // Gráfica dentro de su card (el canvas ya existe en el HTML)
   const cnv = document.getElementById('chartResumen');
+  if (!cnv) return;
   if (cnv.chart) cnv.chart.destroy();
   cnv.classList.remove('hidden');
-  // tamaño cómodo en móvil; Chart respeta el contenedor
   cnv.style.minHeight = '220px';
 
   cnv.chart = new Chart(cnv, {
     type: 'bar',
     data: {
-      labels: ['A favor', 'En contra', 'Abstenciones', 'Ausente'],
+      labels: ['A favor', 'En contra', 'Abstenciones', 'Ausentes'],
       datasets: [{
         label: 'Votos',
-        data: [d.a_favor, d.en_contra, d.abstenciones, d.ausente],
-        backgroundColor: 'rgba(128,0,0,0.85)', // barras en guinda
+        data: [d.a_favor, d.en_contra, d.abstenciones, d.ausentes],
+        backgroundColor: 'rgba(128,0,0,0.85)',
         borderRadius: 4
       }]
     },
@@ -890,41 +938,26 @@ const gridColor = 'rgba(128,0,0,0.10)';  // guinda MUY tenue para la cuadrícula
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          labels: {
-            color: axisColor,             // color del texto de la leyenda
-            font: { size: 14, weight: '600' }
-          }
-        },
+        legend: { labels: { color: axisColor, font: { size: 14, weight: '600' } } },
         title: { display: false }
       },
       scales: {
         x: {
-          ticks: {
-            color: axisColor,             // números/labels del eje X en guinda suave
-            font: { size: 12, weight: '700' }
-          },
-          grid: {
-            color: gridColor,             // líneas de la cuadrícula en guinda muy tenue
-            drawBorder: false
-          }
+          ticks: { color: axisColor, font: { size: 12, weight: '700' } },
+          grid: { color: gridColor, drawBorder: false }
         },
         y: {
           beginAtZero: true,
-          ticks: {
-            color: axisColor,             // números del eje Y en guinda suave
-            font: { size: 12, weight: '700' }
-          },
-          grid: {
-            color: gridColor,
-            drawBorder: false
-          }
+          ticks: { color: axisColor, font: { size: 12, weight: '700' } },
+          grid: { color: gridColor, drawBorder: false }
         }
       }
     }
-  }); 
+  });
+
   actualizarBotonSiguienteAsunto();
 }
+
 
 function actualizarBotonSiguienteAsunto() {
   const wrap = document.getElementById('botonSiguienteAsunto');
@@ -936,11 +969,11 @@ function actualizarBotonSiguienteAsunto() {
   const haySiguiente = Array.isArray(arr) && (idx + 1 < arr.length);
 
   if (haySiguiente) {
-    wrap.classList.remove('hidden');         // ← mostrar ⏭️
+    wrap.classList.remove('hidden');         // ← mostrar 
     accionesFinal?.classList.add('hidden');  // ← ocultar acciones finales
   } else {
-    wrap.classList.add('hidden');            // ← ocultar ⏭️
-    accionesFinal?.classList.remove('hidden'); // ← mostrar acciones finales
+    wrap.classList.add('hidden');            // ← ocultar 
+    accionesFinal?.classList.remove('hidden'); 
   }
 }
 // —————————————————————————
@@ -948,42 +981,62 @@ function actualizarBotonSiguienteAsunto() {
 // —————————————————————————
 async function mostrarResumenSesion() {
   const sid = sessionStorage.getItem(K_SID);
-  const sesion = sessionStorage.getItem(K_SNAME);
+  const sesion = sessionStorage.getItem(K_SNAME) || 'Sesión';
   const r = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`);
   const asuntos = await r.json();
 
-  let txt = `Informe Completo de Sesión\n\nSesión: ${sesion}\n\n`;
-  const header = ['Asunto','Diputado','Voto'];
+  const header = ['Asunto','Detalle','Extra'];
   const allRows = [header];
+
+  let txt = `Informe Completo de Sesión\n\nSesión: ${sesion}\n\n`;
 
   for (let i = 0; i < asuntos.length; i++) {
     const a = asuntos[i];
     const rom = toRoman(i + 1);
-    txt += `Asunto ${rom}: ${a.asunto}\n`;
+    const tipo = tipoDe(a);
+    const titulo = a.asunto || a.titulo || '';
 
-    const rr = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`);
-    const dets = await rr.json();
+    txt += `Asunto ${rom}: ${titulo}\n`;
 
-    if (dets.length > 0) {
-      dets.forEach(v => {
-        txt += `  ${v.nombre}: ${v.voto}\n`;
-        allRows.push([`Asunto ${rom}`, v.nombre, v.voto]);
-      });
-    } else {
-      txt += '  [Sin votos registrados]\n';
+    if (tipo === 'VOTACION') {
+      const rr = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`);
+      const dets = await rr.json();
+
+      const conteo = { 'A favor':0, 'En contra':0, 'Abstenciones':0, 'Ausentes':0 };
+      dets.forEach(v => { const t = normalizarVoto(v.voto); if (conteo[t]!=null) conteo[t]++; });
+
+      txt += `A favor: ${conteo['A favor']}\nEn contra: ${conteo['En contra']}\nAbstenciones: ${conteo['Abstenciones']}\nAusentes: ${conteo['Ausentes']}\n\n`;
+      txt += `--- Detalle de Votos por Diputado ---\n`;
+
+      if (dets.length) {
+        dets.forEach(v => { txt += `${v.nombre}: ${v.voto}\n`; allRows.push([`Asunto ${rom}: ${titulo}`, v.nombre, v.voto]); });
+      } else {
+        txt += '(sin votos)\n';
+        allRows.push([`Asunto ${rom}: ${titulo}`, '(sin votos)', '—']);
+      }
+      txt += '\n';
+
+    } else if (tipo === 'INICIATIVA') {
+      const { comisiones, opinion } = await obtenerRemision(a.id);
+      const lista = (comisiones || []).map(c => c.nombre).join(', ') || '—';
+      txt += `Se turnó a la(s) comisión(es): ${lista}\n`;
+      txt += `Opinión: ${opinion || '—'}\n\n`;
+      allRows.push([`Asunto ${rom}: ${titulo}`, `Turnado a: ${lista}`, `Opinión: ${opinion || '—'}`]);
+
+    } else { // NOTA
+      const { nota } = await obtenerNota(a.id);
+      txt += `Anotaciones: ${nota || '—'}\n\n`;
+      allRows.push([`Asunto ${rom}: ${titulo}`, `Nota: ${nota || '—'}`, '—']);
     }
-    txt += '\n';
   }
 
   sessionStorage.setItem(K_FULL, txt);
   window._sesionRows = allRows;
 
   const div = document.getElementById('resumenSesionCompleto');
-  if (div) {
-    div.innerText = txt;
-    div.classList.remove('hidden');
-  }
+  if (div) { div.innerText = txt; div.classList.remove('hidden'); }
 }
+
 
 async function exportSesionTXT() {
   const sid = sessionStorage.getItem(K_SID);
@@ -994,28 +1047,38 @@ async function exportSesionTXT() {
   let texto = `Informe Completo de Sesión\n\nSesión: ${sesion}\n\n`;
 
   for (let i = 0; i < asuntos.length; i++) {
-    const asunto = asuntos[i];
+    const a = asuntos[i];
     const rom = toRoman(i + 1);
+    const tipo = tipoDe(a);
+    const titulo = a.asunto || a.titulo || '';
 
-    texto += `Asunto ${rom}: ${asunto.asunto}\n`;
+    texto += `Asunto ${rom}: ${titulo}\n`;
 
-    const resVotos = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${asunto.id}`);
-    const votos = await resVotos.json();
+    if (tipo === 'VOTACION') {
+      const resVotos = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`);
+      const votos = await resVotos.json();
+      const conteo = { 'A favor': 0,'En contra': 0,'Abstención': 0,'Ausente': 0 };
+      votos.forEach(v => { const t = normalizarVoto(v.voto); if (conteo[t] !== undefined) conteo[t]++; });
 
-    const conteo = { 'A favor': 0,'En contra': 0,'Abstención': 0,'Ausente': 0 };
-    votos.forEach(v => {
-      const t = normalizarVoto(v.voto);
-      if (conteo[t] !== undefined) conteo[t]++;
-    });
+      texto += `A favor: ${conteo['A favor']}\n`;
+      texto += `En contra: ${conteo['En contra']}\n`;
+      texto += `Abstenciones: ${conteo['Abstención']}\n`;
+      texto += `Ausente: ${conteo['Ausente']}\n\n`;
 
-    texto += `A favor: ${conteo['A favor']}\n`;
-    texto += `En contra: ${conteo['En contra']}\n`;
-    texto += `Abstenciones: ${conteo['Abstención']}\n`;
-    texto += `Ausente: ${conteo['Ausente']}\n\n`;
+      texto += `--- Detalle de Votos por Diputado ---\n`;
+      votos.forEach(v => { texto += `${v.nombre}: ${v.voto}\n`; });
+      texto += '\n';
 
-    texto += `--- Detalle de Votos por Diputado ---\n`;
-    votos.forEach(v => { texto += `${v.nombre}: ${v.voto}\n`; });
-    texto += '\n';
+    } else if (tipo === 'INICIATIVA') {
+      const { comisiones, opinion } = await obtenerRemision(a.id);
+      const lista = (comisiones || []).map(c => c.nombre).join(', ') || '—';
+      texto += `Se turnó a la(s) comisión(es): ${lista}\n`;
+      texto += `Opinión: ${opinion || '—'}\n\n`;
+
+    } else { // NOTA
+      const { nota } = await obtenerNota(a.id);
+      texto += `Anotaciones: ${nota || '—'}\n\n`;
+    }
   }
 
   const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
@@ -1029,25 +1092,6 @@ async function exportSesionTXT() {
   URL.revokeObjectURL(url);
 }
 
-function normalizarVoto(voto) {
-  voto = (voto||'').toLowerCase();
-  if (voto.includes('favor')) return 'A favor';
-  if (voto.includes('contra')) return 'En contra';
-  if (voto.includes('absten')) return 'Abstención';
-  if (voto.includes('ausent')) return 'Ausente';
-  return 'Otros';
-}
-
-// — PDF sesión (versión formal con tablas y resumen global) —
-// (la versión que ya tenías está bien; omitida por espacio)
-// —————————————————————————
-
-// TXT/PDF/XLS de Asunto (los tuyos ya están bien)
-// —————————————————————————
-
-// —————————————————————————
-// Marcar Ausentes (vía endpoint bulk del backend)
-// —————————————————————————
 async function marcarAusentes() {
   const sid = sessionStorage.getItem(K_SID);
   const aid = sessionStorage.getItem(K_AID);
@@ -1295,157 +1339,133 @@ async function exportSesionPDF() {
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
 
-  // Helpers locales para no chocar con otros
-  const pdfSafe = (s) =>
-    (s || '')
-      .normalize('NFC')
-      .replace(/\u200B/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+  const pdfText = (s='') => String(s).normalize('NFC').replace(/\u200B/g,'').replace(/\s+/g,' ').trim();
 
-  const humanizar = (s) => {
-    const stop = new Set(['de','del','la','las','el','los','y','o','u','a','en','por','para','con','sin','al']);
-    return (s || '')
-      .toLowerCase()
-      .replace(/\s+/g,' ')
-      .trim()
-      .split(' ')
-      .map((w,i) => stop.has(w) && i!==0 ? w : w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  };
-
-  // Encabezado
+  // Título centrado
   doc.setFont('helvetica','bold').setFontSize(18)
-     .text('Informe Completo de Sesión', pw/2, 40, { align:'center' });
+     .text('Informe Completo de Sesión', pw/2, 42, { align:'center' });
 
-  // Sesión (nombre bonito, máx 2 líneas)
+  // Nombre de sesión (2 líneas máx)
   const sesionBruta =
     document.getElementById('previewSesion')?.innerText?.replace(/^Sesión:\s*/i,'') ||
     sessionStorage.getItem('sesion_nombre_original') ||
-    sessionStorage.getItem('nombre_sesion') ||
-    'Sesión';
+    sessionStorage.getItem('nombre_sesion') || 'Sesión';
 
-  const sesionBonita = humanizar(pdfSafe(sesionBruta));
   doc.setFont('helvetica','bold').setFontSize(12).text('Sesión:', 40, 70);
-
-  const maxW = pw - 120;
-  let fontSize = 12;
-  doc.setFont('helvetica','normal').setFontSize(fontSize);
-  let sesLines = doc.splitTextToSize(sesionBonita, maxW);
-  while (sesLines.length > 2 && fontSize > 9) {
-    fontSize--;
-    doc.setFontSize(fontSize);
-    sesLines = doc.splitTextToSize(sesionBonita, maxW);
-  }
+  doc.setFont('helvetica','normal').setFontSize(12);
+  const sLines = doc.splitTextToSize(pdfText(sesionBruta), pw - 140);
+  const sesLines = sLines.length > 2 ? sLines.slice(0,2) : sLines;
   doc.text(sesLines, 100, 70);
 
-  // Traer asuntos + votos por lote
   const sid = sessionStorage.getItem('sesion_id');
-  if (!sid) {
-    alert('No hay sesión activa.');
-    return;
-  }
+  if (!sid) { alert('No hay sesión activa.'); return; }
   const asuntos = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`).then(r => r.json());
 
-  // Contador de votos
-  const contar = (votos) => {
-    const c = { favor:0, contra:0, abst:0, ausente:0 };
-    for (const v of votos) {
-      const t = (v.voto || '').toLowerCase();
-      if (t.includes('favor')) c.favor++;
-      else if (t.includes('contra')) c.contra++;
-      else if (t.includes('absten')) c.abst++;
-      else if (t.includes('ausent')) c.ausente++;
-    }
-    return c;
-  };
+  // Totales globales
+  const tot = { favor:0, contra:0, abst:0, ausentes:0 };
 
-  // Procesar en lotes para no saturar
-  const MAX = 6;
-  const lotes = [];
-  for (let i = 0; i < asuntos.length; i += MAX) lotes.push(asuntos.slice(i, i + MAX));
-
-  let y = 100;
-  const totales = { favor:0, contra:0, abst:0, ausente:0 };
-
-  for (const lote of lotes) {
-    const prom = lote.map(a =>
+  let y = 110;
+  const porLotes = 6;
+  for (let i = 0; i < asuntos.length; i += porLotes) {
+    const lote = asuntos.slice(i, i + porLotes);
+    const resultados = await Promise.all(lote.map(a =>
       fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`)
-        .then(r => r.json())
+        .then(r => r.json()).catch(() => [])
         .then(votos => ({ a, votos }))
-        .catch(() => ({ a, votos: [] }))
-    );
-    const resultados = await Promise.all(prom);
+    ));
 
     for (const { a, votos } of resultados) {
       const idx = asuntos.findIndex(x => x.id === a.id);
       const rom = toRoman(idx + 1);
+      const tipo = tipoDe(a);
+      const titulo = pdfText(a.asunto || a.titulo || '');
 
-      if (y > ph - 250) { doc.addPage(); y = 60; }
+      if (y > ph - 240) { doc.addPage(); y = 60; }
 
-      // Título del asunto (máx 4 líneas, reduce tamaño si es largo)
+      // Encabezado del asunto
       doc.setFont('helvetica','bold').setFontSize(12).text(`Asunto ${rom}:`, 40, y);
-      y += 18;
+      y += 16;
 
-      let asuntoFont = 11;
-      doc.setFont('helvetica','normal').setFontSize(asuntoFont);
-      let asuntoLines = doc.splitTextToSize(a.asunto || '', pw - 80);
-      while (asuntoLines.length > 4 && asuntoFont > 8) {
-        asuntoFont--;
-        doc.setFontSize(asuntoFont);
-        asuntoLines = doc.splitTextToSize(a.asunto || '', pw - 80);
+      doc.setFont('helvetica','normal').setFontSize(11);
+      let asuntoFS = 11;
+      let lines = doc.splitTextToSize(titulo, pw - 80);
+      while (lines.length > 4 && asuntoFS > 8) {
+        asuntoFS--; doc.setFontSize(asuntoFS); lines = doc.splitTextToSize(titulo, pw - 80);
       }
-      asuntoLines.forEach(line => { doc.text(line, 40, y); y += 15; });
+      lines.forEach(line => { doc.text(line, 40, y); y += 14; });
 
-      // Resumen local
-      const c = contar(votos);
-      totales.favor   += c.favor;
-      totales.contra  += c.contra;
-      totales.abst    += c.abst;
-      totales.ausente += c.ausente;
+      if (tipo === 'VOTACION') {
+        // Contar y acumular global
+        const c = { favor:0, contra:0, abst:0, ausentes:0 };
+        for (const v of votos) {
+          const t = normalizarVoto(v.voto);
+          if (t === 'A favor') c.favor++;
+          else if (t === 'En contra') c.contra++;
+          else if (t === 'Abstenciones') c.abst++;
+          else if (t === 'Ausentes') c.ausentes++;
+        }
+        tot.favor   += c.favor;
+        tot.contra  += c.contra;
+        tot.abst    += c.abst;
+        tot.ausentes+= c.ausentes;
 
-      doc.setFont('helvetica','bold').setFontSize(11)
-         .text(
-           `A favor: ${c.favor}   En contra: ${c.contra}   Abstenciones: ${c.abst}   Ausente: ${c.ausente}`,
-           40, y + 6
-         );
+        // Resumen del asunto
+        doc.setFont('helvetica','bold').setFontSize(11)
+           .text(`A favor: ${c.favor}   En contra: ${c.contra}   Abstenciones: ${c.abst}   Ausentes: ${c.ausentes}`, 40, y);
+        y += 14;
 
-      // Tabla detalle
-      doc.autoTable({
-        startY: y + 18,
-        head: [['Diputado', 'Voto']],
-        body: votos.map(v => [v.nombre, v.voto]),
-        margin: { left: 40, right: 40 },
-        headStyles: { fillColor: [128, 0, 0], textColor: [255, 255, 255] },
-        styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-        columnStyles: { 0: { cellWidth: 300 }, 1: { cellWidth: 150, halign: 'center' } }
-      });
+        // Tabla detalle (requiere jspdf-autotable cargado)
+        doc.autoTable({
+          startY: y,
+          head: [['Diputado', 'Voto']],
+          body: votos.map(v => [v.nombre, v.voto]),
+          margin: { left: 40, right: 40 },
+          headStyles: { fillColor: [128, 0, 0], textColor: [255, 255, 255] },
+          styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+          columnStyles: { 0: { cellWidth: 300 }, 1: { cellWidth: 150, halign: 'center' } }
+        });
+        y = doc.lastAutoTable.finalY + 20;
 
-      y = doc.lastAutoTable.finalY + 24;
+      } else if (tipo === 'INICIATIVA') {
+        const { comisiones, opinion } = await obtenerRemision(a.id);
+        const lista = (comisiones || []).map(c => c.nombre).join(', ') || '—';
+
+        doc.setFont('helvetica','bold').setFontSize(11).text('Se turnó a la(s) comisión(es):', 40, y);
+        y += 14;
+        doc.setFont('helvetica','normal').setFontSize(11);
+        doc.splitTextToSize(lista, pw - 80).forEach(line => { doc.text(line, 40, y); y += 14; });
+
+        y += 6;
+        doc.setFont('helvetica','bold').text('Opinión:', 40, y);
+        y += 14;
+        doc.setFont('helvetica','normal');
+        doc.splitTextToSize(opinion || '—', pw - 80).forEach(line => { doc.text(line, 40, y); y += 14; });
+
+        y += 12;
+
+      } else { // NOTA
+        const { nota } = await obtenerNota(a.id);
+        doc.setFont('helvetica','bold').setFontSize(11).text('Anotaciones:', 40, y);
+        y += 14;
+        doc.setFont('helvetica','normal').setFontSize(11);
+        doc.splitTextToSize(nota || '—', pw - 80).forEach(line => { doc.text(line, 40, y); y += 14; });
+        y += 12;
+      }
     }
-
-    // dejar al navegador pintar si esto corre en UI
-    await new Promise(r => requestAnimationFrame(r));
   }
 
-  // Resumen global de la sesión
+  // Resumen global al final
   if (y > ph - 80) { doc.addPage(); y = 60; }
-  doc.setFont('helvetica','bold').setFontSize(13)
-     .text('Resumen global de la sesión', 40, y);
+  doc.setFont('helvetica','bold').setFontSize(13).text('Resumen global de la sesión', 40, y);
   y += 18;
-
   doc.setFont('helvetica','normal').setFontSize(12)
-     .text(
-       `A favor: ${totales.favor}   En contra: ${totales.contra}   Abstenciones: ${totales.abst}   Ausente: ${totales.ausente}`,
-       40, y
-     );
+     .text(`A favor: ${tot.favor}   En contra: ${tot.contra}   Abstenciones: ${tot.abst}   Ausentes: ${tot.ausentes}`, 40, y);
 
   doc.save('resumen_sesion_formal.pdf');
 }
 
 // ========= SESIÓN: Excel (usa window._sesionRows si ya existe; si no, los arma) =========
 async function exportSesionXLS() {
-  // Si ya se generó con mostrarResumenSesion(), úsalo
   if (Array.isArray(window._sesionRows) && window._sesionRows.length > 1) {
     const ws = XLSX.utils.aoa_to_sheet(window._sesionRows);
     const wb = XLSX.utils.book_new();
@@ -1454,7 +1474,6 @@ async function exportSesionXLS() {
     return;
   }
 
-  // Si no, lo calculamos aquí
   const sid = sessionStorage.getItem('sesion_id');
   if (!sid) {
     alert('No hay sesión activa.');
@@ -1462,17 +1481,29 @@ async function exportSesionXLS() {
   }
   const asuntos = await fetch(`${backend}/api/asuntos?sesion_id=${sid}`).then(r => r.json());
 
-  const header = ['Asunto','Diputado','Voto'];
+  const header = ['Asunto','Detalle','Extra'];
   const rows = [header];
 
   for (let i = 0; i < asuntos.length; i++) {
     const a = asuntos[i];
     const rom = toRoman(i + 1);
-    const dets = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`).then(r => r.json());
-    if (dets.length) {
-      dets.forEach(v => rows.push([`Asunto ${rom}: ${a.asunto}`, v.nombre, v.voto]));
-    } else {
-      rows.push([`Asunto ${rom}: ${a.asunto}`, '(sin votos)', '—']);
+    const titulo = a.asunto || a.titulo || '';
+    const tipo = tipoDe(a);
+
+    if (tipo === 'VOTACION') {
+      const dets = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${a.id}`).then(r => r.json());
+      if (dets.length) {
+        dets.forEach(v => rows.push([`Asunto ${rom}: ${titulo}`, v.nombre, v.voto]));
+      } else {
+        rows.push([`Asunto ${rom}: ${titulo}`, '(sin votos)', '—']);
+      }
+    } else if (tipo === 'INICIATIVA') {
+      const { comisiones, opinion } = await obtenerRemision(a.id);
+      const lista = (comisiones || []).map(c => c.nombre).join(', ') || '—';
+      rows.push([`Asunto ${rom}: ${titulo}`, `Turnado a: ${lista}`, `Opinión: ${opinion || '—'}`]);
+    } else { // NOTA
+      const { nota } = await obtenerNota(a.id);
+      rows.push([`Asunto ${rom}: ${titulo}`, `Nota: ${nota || '—'}`, '—']);
     }
   }
 
@@ -1488,7 +1519,7 @@ async function exportAsuntoTXT() {
   const nameA = sessionStorage.getItem(K_ANAME) || "Asunto sin título";
 
   if (!sid || !aid) {
-    alert("❌ No hay sesión o asunto activo.");
+    alert(" No hay sesión o asunto activo.");
     return;
   }
 
@@ -1537,6 +1568,16 @@ function terminarSesion() {
   location.reload();
 }
 
+function normalizarVoto(voto) {
+  const s = (voto||'').toLowerCase();
+  if (s.includes('favor'))   return 'A favor';
+  if (s.includes('contra'))  return 'En contra';
+  if (s.includes('absten'))  return 'Abstenciones'; // ← plural
+  if (s.includes('ausent'))  return 'Ausentes';     // ← plural
+  return 'Otros';
+}
+
+
 // ========= ASUNTO: PDF (encabezado + tabla + gráfica si existe) =========
 async function exportAsuntoPDF() {
   const { jsPDF } = window.jspdf;
@@ -1544,15 +1585,10 @@ async function exportAsuntoPDF() {
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
 
-  // Datos básicos
   const sid = sessionStorage.getItem('sesion_id');
   const aid = sessionStorage.getItem('asunto_id');
   const asuntoNombre = sessionStorage.getItem('nombre_asunto') || 'Asunto';
-
-  if (!sid || !aid) {
-    alert('No hay sesión o asunto activo.');
-    return;
-  }
+  if (!sid || !aid) { alert('No hay sesión o asunto activo.'); return; }
 
   // Título
   doc.setFont('helvetica','bold').setFontSize(18)
@@ -1578,19 +1614,20 @@ async function exportAsuntoPDF() {
   y = nextY + 10;
 
   // Votos del asunto
-  const votos = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`).then(r => r.json()).catch(()=>[]);
-  const cont = { favor:0, contra:0, abst:0, ausente:0 };
+  const votos = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`)
+    .then(r => r.json()).catch(()=>[]);
+  const cont = { favor:0, contra:0, abst:0, ausentes:0 };
   for (const v of votos) {
-    const t = (v.voto || '').toLowerCase();
-    if (t.includes('favor')) cont.favor++;
-    else if (t.includes('contra')) cont.contra++;
-    else if (t.includes('absten')) cont.abst++;
-    else if (t.includes('ausent')) cont.ausente++;
+    const t = normalizarVoto(v.voto);
+    if (t==='A favor') cont.favor++;
+    else if (t==='En contra') cont.contra++;
+    else if (t==='Abstenciones') cont.abst++;
+    else if (t==='Ausentes') cont.ausentes++;
   }
 
   // Resumen numérico
   doc.setFont('helvetica','bold').setFontSize(11)
-     .text(`A favor: ${cont.favor}   En contra: ${cont.contra}   Abstenciones: ${cont.abst}   Ausente: ${cont.ausente}`, 40, y);
+     .text(`A favor: ${cont.favor}   En contra: ${cont.contra}   Abstenciones: ${cont.abst}   Ausentes: ${cont.ausentes}`, 40, y);
   y += 16;
 
   // Tabla detalle
@@ -1607,50 +1644,54 @@ async function exportAsuntoPDF() {
   y = doc.lastAutoTable.finalY + 18;
   if (y > ph - 260) { doc.addPage(); y = 60; }
 
+  // Gráfica off-DOM
   const canvas = document.createElement('canvas');
-  canvas.width = 900;   // más grande = mejor resolución
-  canvas.height = 350;
-
+  canvas.width = 900; canvas.height = 350;
   const ctx = canvas.getContext('2d');
-
   const chart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['A favor', 'En contra', 'Abstenciones', 'Ausente'],
+      labels: ['A favor', 'En contra', 'Abstenciones', 'Ausentes'],
       datasets: [{
         label: 'Votos',
-        data: [cont.favor, cont.contra, cont.abst, cont.ausente],
+        data: [cont.favor, cont.contra, cont.abst, cont.ausentes],
         backgroundColor: 'rgba(128,0,0,0.8)'
       }]
     },
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      animation: false, // ← clave: sin animación para “congelar” el frame
-      plugins: {
-        legend: { labels: { font: { size: 16 } } },
-        title: { display: true, text: 'Gráfica de Resultados', font: { size: 18 } }
-      },
-      scales: {
-        x: { ticks: { font: { size: 14 } } },
-        y: { ticks: { font: { size: 14 } }, beginAtZero: true }
-      }
-    }
+    options: { responsive: false, maintainAspectRatio: false, animation: false }
   });
-
-  // Asegurar que esté renderizada antes de capturar
   chart.update();
   const img = canvas.toDataURL('image/png');
   chart.destroy();
 
-  // Insertar imagen ocupando el ancho útil
   const imgW = pw - 80;
   const imgH = (imgW / canvas.width) * canvas.height;
   doc.addImage(img, 'PNG', 40, y, imgW, imgH);
-  doc.save('asunto.pdf');
 
-
+  // Nombre de archivo bonito
+  const idx = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
+  const rom = toRoman(idx + 1);
+  const safe = asuntoNombre.replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 60).trim() || 'Asunto';
+  doc.save(`Asunto_${rom} - ${safe}.pdf`);
 }
+
+function _normVoto(v) {
+  const s = (v || '').toLowerCase();
+  if (s.includes('favor')) return 'favor';
+  if (s.includes('contra')) return 'contra';
+  if (s.includes('absten')) return 'abstenciones';
+  if (s.includes('ausent')) return 'ausentes';
+  return 'otros';
+}
+function contarVotosArray(votos) {
+  const c = { favor: 0, contra: 0, abstenciones: 0, ausentes: 0 };
+  for (const v of votos || []) {
+    const t = _normVoto(v.voto);
+    if (t in c) c[t]++;
+  }
+  return c;
+}
+
 
 // Normaliza/contabiliza votos para gráficas
 function _normVoto(v) {
@@ -1825,11 +1866,21 @@ function filtrarSesiones() {
 // 📥 Descargar PDF completo de la sesión.
 // Requiere soporte en backend, por ejemplo: GET /api/sesion/:id/pdf
 async function descargarSesion(idSesion) {
+  const url = `${backend}/api/sesion/${idSesion}/pdf`;
   try {
-    // abre en nueva pestaña (si el backend entrega application/pdf)
-    const url = `${backend}/api/sesion/${idSesion}/pdf`;
     const win = window.open(url, '_blank');
-    if (!win) alert('No se pudo abrir la descarga. Revisa el bloqueador de ventanas.');
+    if (win) return;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Respuesta no OK');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `sesion_${idSesion}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
   } catch (e) {
     console.error('descargarSesion:', e);
     alert('No se pudo descargar la sesión.');
