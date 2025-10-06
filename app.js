@@ -353,27 +353,21 @@ async function _guardarNotaSilenciosa(asuntoId, texto) {
 }
 
 async function mostrarVistaNota(asunto, sesionId) {
-  // título
   const h = document.getElementById('nota-titulo');
   if (h) h.textContent = `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo || ''}`;
 
-  // limpia textarea
   const ta = document.getElementById('nota-text');
   if (ta) ta.value = '';
 
-  // muestra la sección
   document.getElementById('vista-nota')?.classList.remove('hidden');
 
-  // botón siguiente
   const btn = document.getElementById('nota-siguiente');
   if (!btn) return;
 
   btn.onclick = async () => {
     const texto = ta?.value?.trim() || '';
-    // guarda si hay id (si no, lo ignoramos silenciosamente)
     if (asunto.id) await _guardarNotaSilenciosa(asunto.id, texto);
 
-    // intenta pedir el siguiente al backend (si existe)
     const desde = asunto.ordinal || 0;
     let next = null;
     try {
@@ -381,7 +375,6 @@ async function mostrarVistaNota(asunto, sesionId) {
       if (r.ok) next = await r.json();
     } catch {}
 
-    // fallback cliente con asuntos_array
     if (!next) {
       const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
       const idx = Math.max(0, (asunto.ordinal || 1) - 1);
@@ -397,11 +390,8 @@ async function mostrarVistaNota(asunto, sesionId) {
       }
     }
 
-    if (next) {
-      abrirAsunto(next, sesionId);
-    } else {
-      finalizarSesionParlamentaria();
-    }    
+    if (next) abrirAsunto(next, sesionId);
+    else mostrarVistaCierre();
   };
 }
 
@@ -589,14 +579,14 @@ async function mostrarVistaIniciativa(asunto, sesionId){
 
   document.getElementById('vista-iniciativa').classList.remove('hidden');
 
-  // 👇 Ocultar el botón "Guardar remisión" (si existe) y quitar cualquier handler
+  //  Ocultar el botón "Guardar remisión" (si existe) y quitar cualquier handler
   const btnGuardar = document.getElementById('ini-guardar');
   if (btnGuardar) {
     btnGuardar.classList.add('hidden');
     btnGuardar.onclick = null;
   }
 
-  // 👉 Al dar "Siguiente asunto": guarda en silencio y avanza
+  //  Al dar "Siguiente asunto": guarda en silencio y avanza
   document.getElementById('ini-siguiente').onclick = async ()=>{
     // Guardado silencioso (sin alert)
     if (asunto.id) {
@@ -623,7 +613,7 @@ async function mostrarVistaIniciativa(asunto, sesionId){
     } catch {}
 
     if (next) abrirAsunto(next, sesionId);
-    else finalizarSesionParlamentaria();
+    else mostrarVistaCierre();
   };
 }
 
@@ -666,18 +656,14 @@ async function confirmarOrden(){
 async function avanzarAlSiguienteAsunto() {
   const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
   let idx = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
-
-  await marcarAusentes();
-
-  if (idx + 1 >= arr.length) { 
-    finalizarSesionParlamentaria();
-    return; 
+  if (idx + 1 >= arr.length) {
+    await marcarAusentes();
+    mostrarVistaCierre();
+    return;
   }
 
-  // ⇨ adelanta el índice aquí
   idx = idx + 1;
   sessionStorage.setItem('asunto_index', String(idx));
-
   const raw = arr[idx];
   const sid = SID() || null;
 
@@ -688,10 +674,8 @@ async function avanzarAlSiguienteAsunto() {
     titulo: raw.asunto || raw.titulo || '',
     tipo: clasificarTipoAsunto(raw.asunto || raw.titulo || '')
   };
-
   abrirAsunto(next, sid);
 }
-
 
 // —————————————————————————
 function iniciarApp() { showSection('uploadOrden'); }
@@ -1108,9 +1092,10 @@ function showSection(id) {
       .catch(() => actualizarBotonSiguienteAsunto());
   }
 
-  const secciones = ['uploadOrden','confirmarOrden','sesion',
+  const secciones = [
+    'uploadOrden','confirmarOrden','sesion',
     'diputados','resultados','historial','sesionesPasadas','vistaEdicion',
-    'vista-iniciativa','vista-nota'
+    'vista-iniciativa','vista-nota','finSesion'
   ];
   secciones.forEach(s => {
     const el = document.getElementById(s);
@@ -1119,9 +1104,6 @@ function showSection(id) {
 
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = 'block';
-
-  // 🔻 Elimina ESTA línea duplicada (ya lo haces arriba):
-  // if (id === 'resultados') marcarAusentes().then(cargarResultados);
 
   if (id === 'sesionesPasadas') cargarSesionesPasadas();
   if (id === 'historial') {
@@ -1898,6 +1880,13 @@ function finalizarSesionParlamentaria(){
   showSection('sesionesPasadas');
 }
 
+function mostrarVistaCierre(){
+  const el = document.getElementById('finSesionNombre');
+  if (el) el.textContent = SNAME() || 'Sesión';
+  showSection('finSesion');
+}
+// en showSection → agrega 'finSesion' al arreglo:
+const secciones = ['uploadOrden','confirmarOrden','sesion','diputados','resultados','historial','sesionesPasadas','vistaEdicion','vista-iniciativa','vista-nota','finSesion'];
 
 
 

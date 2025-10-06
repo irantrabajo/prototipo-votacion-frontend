@@ -103,9 +103,9 @@
   <ol id="previewAsuntos" class="lista-asuntos"></ol>
 
   <div class="actions" style="margin-top:12px;">
-    <!-- 👉Botón único que confirma e inicia la votación -->
-    <button class="full" onclick="confirmarOrden()">✅ Confirmar e iniciar votación</button>
-    <button onclick="showSection('uploadOrden')">↩️ Volver</button>
+    <!-- Botón único que confirma e inicia la votación -->
+    <button class="full" onclick="confirmarOrden()"> Confirmar e iniciar votación</button>
+    <button onclick="showSection('uploadOrden')">↩ Volver</button>
   </div>
 </section>
 
@@ -222,7 +222,7 @@
           </div>
 
           <div id="botonSiguienteAsunto" class="hidden actions">
-            <button class="full" onclick="avanzarAlSiguienteAsunto()">⏭️ Siguiente Asunto</button>
+            <button class="full" onclick="avanzarAlSiguienteAsunto()">Siguiente Asunto</button>
           </div>          
 
           <div class="actions" style="margin-top:6px;">
@@ -244,9 +244,22 @@
       </div>
     </section>
 
+    <section id="finSesion" class="hidden">
+      <h2>✅ Sesión finalizada</h2>
+      <p id="finSesionNombre" class="session-name"></p>
+      <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="exportSesionTXT()">Descargar TXT</button>
+        <button onclick="exportSesionPDF()">Descargar PDF</button>
+        <button onclick="exportSesionXLS()">Descargar Excel</button>
+      </div>
+      <hr/>
+      <button class="btn-danger" onclick="finalizarSesionParlamentaria()">Terminar sesión</button>
+    </section>    
+    
+
     <!-- 7) Sesiones pasadas (vista tipo tabla) -->
 <section id="sesionesPasadas" class="hidden">
-  <h2>🗂️ Sesiones Pasadas</h2>
+  <h2> Sesiones Pasadas</h2>
   
 
   <!-- Buscador (usa la función que sí existe en app.js) -->
@@ -269,7 +282,7 @@
           <th style="width:120px; text-align:left;">Eliminar</th>
         </tr>
       </thead>
-      <!-- 👇 ESTE ID es el que usa tu app.js: cargarSesionesPasadas() escribe aquí -->
+      <!--  ESTE ID es el que usa mi app.js: cargarSesionesPasadas()  -->
       <tbody id="tablaSesionesBody">
         <tr><td colspan="6" style="text-align:center;">Cargando sesiones…</td></tr>
       </tbody>
@@ -288,7 +301,7 @@
 
     <!-- 8) Terminar Sesión -->
     <div id="botonTerminarSesion" class="hidden">
-      <button onclick="terminarSesion()">🔁 Terminar Sesión</button>
+      <button onclick="terminarSesion()"> Terminar Sesión</button>
     </div>
 
     </div>
