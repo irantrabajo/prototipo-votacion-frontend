@@ -56,16 +56,6 @@ function absolutize(url) {
 // 👉 Orden preferido (si quieres un orden fijo, mete aquí nombres exactos)
 const ordenPreferido = []; // p.ej: ["Víctor Sánchez", "Geraldine...", "Irán López", ...]
 
-
-// Muestra el asunto activo en el banner de la vista "Diputados"
-function actualizarAsuntoActual() {
-  const el = document.getElementById('asuntoActual');
-  const asunto = sessionStorage.getItem('nombre_asunto') || ''; // K_ANAME
-  if (!el) return;
-  el.textContent = asunto ? `Asunto en votación: ${asunto}` : '';
-}
-
-
 // —————————————————————————
 // Login
 // —————————————————————————
@@ -416,48 +406,41 @@ async function mostrarVistaNota(asunto, sesionId) {
 }
 
 async function abrirAsunto(asunto, sesionId){
-  // Oculta vistas previas
-  document.getElementById('vista-iniciativa')?.classList.add('hidden');
-  document.getElementById('vista-nota')?.classList.add('hidden');
-
-  // Clasificar SIEMPRE por el texto, ignorar tipo que venga de BD
   const texto = (asunto.titulo || asunto.asunto || '').trim();
   const a = { ...asunto, tipo: clasificarTipoAsunto(texto) };
 
+  // ⇨ calcula y guarda el índice SIEMPRE
+  const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+  let idx = -1;
+  if (a.id != null) idx = arr.findIndex(x => String(x.id) === String(a.id));
+  if (idx === -1) {
+    const ord0 = (a.ordinal || 1) - 1;
+    idx = Math.max(0, Math.min(ord0, arr.length - 1));
+  }
+  sessionStorage.setItem('asunto_index', String(idx));
+
   if (a.tipo === 'INICIATIVA') {
+    showSection('vista-iniciativa');
     await mostrarVistaIniciativa(a, sesionId);
     return;
   }
 
   if (a.tipo === 'VOTACION') {
-    // Guarda id del asunto activo
     if (a.id != null) sessionStorage.setItem(K_AID, String(a.id));
-  
-    // Nombre  del asunto (titulo || asunto || texto)
     const nombreAsunto = (a.titulo || a.asunto || texto || '').trim() || '(Asunto)';
     sessionStorage.setItem(K_ANAME, nombreAsunto);
-  
-    // Calcula índice actual (por id y fallback por ordinal)
-    const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
-    let idx = -1;
-    if (a.id != null) idx = arr.findIndex(x => String(x.id) === String(a.id));
-    if (idx === -1) {
-      const ord0 = (a.ordinal || 1) - 1;
-      idx = Math.max(0, Math.min(ord0, arr.length - 1));
-    }
-    sessionStorage.setItem('asunto_index', String(idx));
-  
-    // Ir a votar
+
     actualizarAsuntoActual();
     VOTADOS.clear();
     showSection('diputados');
     await cargarDiputados();
     return;
-  }  
+  }
 
-  // NOTA / DISPENSA / LECTURAS
+  showSection('vista-nota');
   await mostrarVistaNota(a, sesionId);
 }
+
 
 function actualizarAsuntoActual() {
   const el = document.getElementById('asuntoActual');
@@ -536,27 +519,6 @@ btnDel.addEventListener('click', async (e) => {
     renderizarAsuntos();
   }
 });
-
-li.querySelector('.btn-del').onclick = async () => {
-  const sesionId = Number(sessionStorage.getItem(K_SID));
-
-  try {
-    if (a.id) {
-      await fetch(`${API}/asunto/${a.id}`, { method: 'DELETE' });
-      const r = await fetch(`${API}/asuntos?sesion_id=${sesionId}`);
-      const nuevos = await r.json();
-      sessionStorage.setItem('asuntos_array', JSON.stringify(nuevos));
-    } else {
-      const lista = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
-      lista.splice(i, 1);
-      sessionStorage.setItem('asuntos_array', JSON.stringify(lista));
-    }
-  } catch (_) {
-    // si falla, no rompemos la UI
-  } finally {
-    renderizarAsuntos();
-  }
-};
 
     ul.appendChild(li);
   });
@@ -705,29 +667,31 @@ async function avanzarAlSiguienteAsunto() {
   const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
   let idx = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
 
-  // Cierra el asunto actual marcando ausentes
   await marcarAusentes();
 
-  // ¿Hay siguiente?
   if (idx + 1 >= arr.length) { 
     finalizarSesionParlamentaria();
     return; 
   }
 
-  const raw = arr[idx + 1];
+  // ⇨ adelanta el índice aquí
+  idx = idx + 1;
+  sessionStorage.setItem('asunto_index', String(idx));
+
+  const raw = arr[idx];
   const sid = SID() || null;
 
   const next = {
     id: raw.id ?? null,
     sesion_id: sid,
-    ordinal: idx + 2, // humano (I, II, III…)
+    ordinal: idx + 1,
     titulo: raw.asunto || raw.titulo || '',
     tipo: clasificarTipoAsunto(raw.asunto || raw.titulo || '')
   };
 
-  // Delega la navegación según tipo
   abrirAsunto(next, sid);
 }
+
 
 // —————————————————————————
 function iniciarApp() { showSection('uploadOrden'); }
@@ -1932,7 +1896,6 @@ function finalizarSesionParlamentaria(){
   VOTADOS.clear();
   updateResultadosLinkVisibility();
   showSection('sesionesPasadas');
-  cargarSesionesPasadas();
 }
 
 
