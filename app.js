@@ -881,7 +881,7 @@ async function cargarResultados() {
   const roman = toRoman(index + 1);
 
   if (!sid || !aid) {
-    console.warn("❌ No hay sesión o asunto activo.");
+    console.warn(" No hay sesión o asunto activo.");
     return;
   }
 
@@ -891,7 +891,7 @@ async function cargarResultados() {
     data = await res.json();
     if (!Array.isArray(data)) throw new Error("No es un array");
   } catch (err) {
-    console.error("❌ Error al cargar resultados:", err);
+    console.error(" Error al cargar resultados:", err);
     return;
   }
   const d = data[0] || { a_favor:0, en_contra:0, abstenciones:0, ausente:0 };
@@ -975,8 +975,26 @@ const gridColor = 'rgba(128,0,0,0.10)';  // guinda MUY tenue para la cuadrícula
       }
     }
   }); 
+  actualizarBotonSiguienteAsunto();
 }
 
+function actualizarBotonSiguienteAsunto() {
+  const wrap = document.getElementById('botonSiguienteAsunto');
+  const accionesFinal = document.getElementById('accionesSesion');
+  if (!wrap) return;
+
+  const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+  const idx = parseInt(sessionStorage.getItem('asunto_index') || '0', 10);
+  const haySiguiente = Array.isArray(arr) && (idx + 1 < arr.length);
+
+  if (haySiguiente) {
+    wrap.classList.remove('hidden');         // ← mostrar ⏭️
+    accionesFinal?.classList.add('hidden');  // ← ocultar acciones finales
+  } else {
+    wrap.classList.add('hidden');            // ← ocultar ⏭️
+    accionesFinal?.classList.remove('hidden'); // ← mostrar acciones finales
+  }
+}
 // —————————————————————————
 // Resumen de Sesión / Exportes
 // —————————————————————————
@@ -1119,18 +1137,17 @@ function filtrarDiputados() {
 // Router de secciones
 // —————————————————————————
 function showSection(id) {
-  // Bloqueo: no dejar entrar a "resultados" si aún no hay votación
   if (id === 'resultados') {
-    const aid = sessionStorage.getItem('asunto_id');
-    const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
-    if (!aid && (!Array.isArray(arr) || arr.length === 0)) return;
+    marcarAusentes()
+      .then(cargarResultados)
+      .then(() => actualizarBotonSiguienteAsunto())
+      .catch(() => actualizarBotonSiguienteAsunto());
   }
 
-  // Secciones de la app (incluye confirmarOrden)
   const secciones = ['uploadOrden','confirmarOrden','sesion',
     'diputados','resultados','historial','sesionesPasadas','vistaEdicion',
-    'vista-iniciativa','vista-nota' 
-  ];  
+    'vista-iniciativa','vista-nota'
+  ];
   secciones.forEach(s => {
     const el = document.getElementById(s);
     if (el) el.classList.toggle('hidden', s !== id);
@@ -1139,8 +1156,9 @@ function showSection(id) {
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = 'block';
 
-  // Side-effects por sección
-  if (id === 'resultados') marcarAusentes().then(cargarResultados);
+  // 🔻 Elimina ESTA línea duplicada (ya lo haces arriba):
+  // if (id === 'resultados') marcarAusentes().then(cargarResultados);
+
   if (id === 'sesionesPasadas') cargarSesionesPasadas();
   if (id === 'historial') {
     const vp = document.getElementById('votosPrevios');
