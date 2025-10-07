@@ -354,7 +354,8 @@ async function _guardarNotaSilenciosa(asuntoId, texto) {
 
 async function mostrarVistaNota(asunto, sesionId) {
   const h = document.getElementById('nota-titulo');
-  if (h) h.textContent = `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo || ''}`;
+  if (h) h.textContent = `(${aRomano(asunto.ordinal || 1)}) ${asunto.asunto || asunto.titulo || ''}`;
+
 
   const ta = document.getElementById('nota-text');
   if (ta) ta.value = '';
@@ -565,7 +566,7 @@ function eliminarAsuntoPrevio(idx){
 
 async function mostrarVistaIniciativa(asunto, sesionId){
   document.getElementById('ini-titulo').textContent =
-    `(${aRomano(asunto.ordinal || 1)}) ${asunto.titulo}`;
+  `(${aRomano(asunto.ordinal || 1)}) ${asunto.asunto || asunto.titulo || ''}`;
 
   const coms = await getComisiones();
   pintarComisiones(coms);
