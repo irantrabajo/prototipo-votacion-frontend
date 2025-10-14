@@ -565,59 +565,70 @@ function eliminarAsuntoPrevio(idx){
 }
 
 async function mostrarVistaIniciativa(asunto, sesionId){
+  // Título
   document.getElementById('ini-titulo').textContent =
-  `(${aRomano(asunto.ordinal || 1)}) ${asunto.asunto || asunto.titulo || ''}`;
+    `(${aRomano(asunto.ordinal || 1)}) ${asunto.asunto || asunto.titulo || ''}`;
 
-  const coms = await getComisiones();
-  pintarComisiones(coms);
-
+  // Limpia SIEMPRE al entrar
+  const ta   = document.getElementById('ini-opinion');
   const busc = document.getElementById('com-buscar');
-  busc.oninput = (e)=>{
-    const q = (e.target.value || '').toLowerCase();
-    const filt = coms.filter(c => c.nombre.toLowerCase().includes(q));
-    pintarComisiones(filt);
-  };
+  if (ta)   ta.value = '';
+  if (busc) busc.value = '';
 
+  // Carga comisiones y (si existe) la remisión ya guardada
+  const coms = await getComisiones();
+  let preMarcadas = [], opinion = '';
+  if (asunto.id) {
+    try {
+      const { comisiones, opinion: op } = await obtenerRemision(asunto.id); // GET (si tu server no lo trae, ver nota abajo)
+      preMarcadas = (comisiones || []).map(c => c.id);
+      opinion = op || '';
+    } catch {}
+  }
+  pintarComisiones(coms, preMarcadas);
+  if (ta) ta.value = opinion;
+
+  // Mostrar vista
   document.getElementById('vista-iniciativa').classList.remove('hidden');
 
-  //  Ocultar el botón "Guardar remisión" (si existe) y quitar cualquier handler
+  // Oculta “Guardar” si existe
   const btnGuardar = document.getElementById('ini-guardar');
-  if (btnGuardar) {
-    btnGuardar.classList.add('hidden');
-    btnGuardar.onclick = null;
-  }
+  if (btnGuardar) { btnGuardar.classList.add('hidden'); btnGuardar.onclick = null; }
 
-  //  Al dar "Siguiente asunto": guarda en silencio y avanza
-  document.getElementById('ini-siguiente').onclick = async ()=>{
-    // Guardado silencioso (sin alert)
-    if (asunto.id) {
-      try {
-        const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')]
-          .map(x => parseInt(x.value, 10));
-        const opinion = document.getElementById('ini-opinion')?.value || '';
+  // Siguiente asunto: guarda y limpia UI antes de avanzar
+  const btn = document.getElementById('ini-siguiente');
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      if (asunto.id) {
+        const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')].map(x => +x.value);
+        const opinionVal = ta?.value || '';
         await fetch(`${API}/asuntos/${asunto.id}/remision`, {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ comisionesIds: ids, opinion })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comisionesIds: ids, opinion: opinionVal })
         });
-      } catch (e) {
-        console.warn('No se pudo guardar la remisión (se continúa):', e);
       }
+    } catch (e) {
+      console.warn('No se pudo guardar la remisión (continuo):', e);
+    } finally {
+      // 🔹 Limpiar UI para el siguiente asunto
+      if (ta) ta.value = '';
+      document.querySelectorAll('#com-lista input[type=checkbox]').forEach(x => x.checked = false);
+      if (busc) busc.value = '';
+      btn.disabled = false;
     }
 
-    // Pedir el siguiente asunto y navegar
+    // Traer siguiente y abrir
     const desde = asunto.ordinal || 0;
     let next = null;
     try {
       const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
       if (r.ok) next = await r.json();
     } catch {}
-
-    if (next) abrirAsunto(next, sesionId);
-    else mostrarVistaCierre();
+    next ? abrirAsunto(next, sesionId) : mostrarVistaCierre();
   };
 }
-
 // —————————————————————————
 // Confirmar Orden: crear sesión + asuntos (bulk)
 // —————————————————————————
