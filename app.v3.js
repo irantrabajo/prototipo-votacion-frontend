@@ -1,6 +1,4 @@
-// —————————————————————————
-// Constantes y SessionStorage
-// —————————————————————————
+
 const K_SID        = 'sesion_id';
 const K_SNAME      = 'nombre_sesion';
 const K_AID        = 'asunto_id';
@@ -8,7 +6,7 @@ const K_ANAME      = 'nombre_asunto';
 const K_FULL       = 'resumen_sesion_full';
 const K_ASUNTO_CNT = 'asunto_count';
 
-// lee variable de entorno si existe (Amplify), si no, usa CloudFront
+
 const backend = 'https://d32cz7avp3p0jh.cloudfront.net';
 
 let DIPUTADOS_CACHE = null;
@@ -23,7 +21,7 @@ function fotoSrc(f) {
   return `${backend}/api/imagenes_Diputados/${u}`;
 }
 
-// Normaliza texto (minúsculas + sin acentos)
+
 function norm(s) {
   return (s || '').toString().trim().toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -32,13 +30,11 @@ function norm(s) {
 function absolutize(url) {
   if (!url) return null;
   const u = String(url).replace(/\\/g, '/').replace(/^\/+/, '');
-  if (/^https?:\/\//i.test(u)) return u;   // ya es absoluta
-  return `${backend}/${u}`;                 // hazla absoluta con tu backend
+  if (/^https?:\/\//i.test(u)) return u; 
+  return `${backend}/${u}`;                
 }
 
-
-// 👉 Orden preferido (si luego quieres un orden fijo, mete aquí los nombres exactos)
-const ordenPreferido = []; // p.ej: ["Víctor Sánchez", "Geraldine...", "Irán López", ...]
+const ordenPreferido = []; 
 
 
 async function login() {
@@ -46,7 +42,7 @@ async function login() {
   const password = document.getElementById('passwordLogin').value.trim();
 
   if (!usuario || !password) {
-    alert("🚨 Por favor llena todos los campos.");
+    alert(" Por favor llena todos los campos.");
     return;
   }
 
@@ -58,7 +54,7 @@ async function login() {
     });
 
     if (!res.ok) {
-      alert("❌ Usuario o contraseña incorrectos.");
+      alert(" Usuario o contraseña incorrectos.");
       return;
     }
 
@@ -66,41 +62,34 @@ async function login() {
     sessionStorage.setItem("usuario", data.usuario);
     sessionStorage.setItem("rol", data.rol);
 
-   // alert(`🎉 Bienvenido, ${data.usuario}`);
     mostrarApp();
   } catch (err) {
     console.error("Error en login:", err);
-    alert("❌ Error al intentar iniciar sesión.");
+    alert("Error al intentar iniciar sesión.");
   }
 }
 function mostrarApp() {
-  // 1️⃣ Oculta todo el div.login-page, no solo el section#login
+  
   document.querySelector('.login-page').classList.add('hidden');
 
-  // 2️⃣ Oculta también el section#login (por si acaso)
+ 
   document.getElementById('login').classList.add('hidden');
 
-  // 3️⃣ Muestra sidebar y main
+ 
   document.querySelector('.sidebar').classList.remove('hidden');
   document.querySelector('.main').classList.remove('hidden');
 
-  // 4️⃣ Ve directo a la sección de subir PDF
   showSection('uploadOrden');
 
-  // 5️⃣ (Opcional) Auto-scroll para asegurarte de verlo arriba
   document
     .getElementById('uploadOrden')
     .scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 
-
-// —————————————————————————
-// 0) Lista global de textos de asuntos
-// —————————————————————————
 let listaAsuntos = [];
 
-// 0.1) Subir y previsualizar Orden del Día
+
 async function uploadOrden() {
   const input = document.getElementById('fileOrden');
   if (!input.files.length) {
@@ -121,18 +110,16 @@ async function uploadOrden() {
       body: form
     });
 
-    // 🔒 Evita reventar si la respuesta NO es JSON válido (por PDF malo, error 500, etc)
     const contentType = res.headers.get('content-type') || '';
     if (!res.ok || !contentType.includes('application/json')) {
       const texto = await res.text();
-      console.error("❌ Error en uploadOrden (no JSON):", texto);
+      console.error(" Error en uploadOrden (no JSON):", texto);
       alert("Error al procesar PDF: " + texto);
       return;
     }
 
     const payload = await res.json();
 
-    // 🟢 1. Mostrar nombre original si viene en la respuesta
     if (payload.nombreOriginal) {
       document.getElementById("nombreSesion").value = payload.nombreOriginal;
       document.getElementById("previewNombreSesionOriginal").innerText = payload.nombreOriginal;
@@ -142,7 +129,7 @@ async function uploadOrden() {
     }
 
     if (res.status === 201) {
-      // Sesión nueva creada exitosamente
+     
       listaAsuntos = payload.asuntos;
       sessionStorage.setItem(K_SID, payload.sesion_id);
 
@@ -156,14 +143,11 @@ async function uploadOrden() {
     }
 
   } catch (error) {
-    console.error("❌ Error en uploadOrden:", error);
+    console.error(" Error en uploadOrden:", error);
     alert("Hubo un error al subir el PDF.");
   }
 }
 
-// —————————————————————————
-// 1) Renderizar la lista numerada de asuntos
-// —————————————————————————
 function renderizarAsuntos() {
   const ul = document.getElementById('previewAsuntos');
   ul.innerHTML = '';
@@ -184,17 +168,13 @@ function renderizarAsuntos() {
   });
 }
 
-// —————————————————————————
-// 2) Eliminar un asunto y volver a renderizar
-// —————————————————————————
+
 function eliminarAsunto(index) {
   listaAsuntos.splice(index, 1);
   renderizarAsuntos();
 }
 
-// —————————————————————————
-// 3) Conversor a números romanos (1 → I, 2 → II, …)
-// —————————————————————————
+
 function toRoman(num) {
   const map = [
     [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],
@@ -211,9 +191,7 @@ function toRoman(num) {
   return result;
 }
 
-// —————————————————————————
-// 0.1) Confirmar Orden: crear sesión y asuntos
-// —————————————————————————
+
 async function confirmarOrden() {
   const baseNombre = document.getElementById('previewSesion').innerText.replace('Sesión: ', '').trim();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -249,7 +227,7 @@ async function confirmarOrden() {
 
     if (!resA.ok) {
       const err = await resA.text();
-      console.error("❌ Error al enviar asunto:", texto, "->", err);
+      console.error("Error al enviar asunto:", texto, "->", err);
     }
   }
 
@@ -266,7 +244,7 @@ async function confirmarOrden() {
     }
   } else {
     const err = await resAll.text();
-    console.error("❌ Error al obtener asuntos:", err);
+    console.error(" Error al obtener asuntos:", err);
   }
 
   sessionStorage.setItem(K_ASUNTO_CNT, String(listaAsuntos.length));
@@ -288,20 +266,16 @@ async function avanzarAlSiguienteAsunto() {
     showSection('diputados');
     cargarDiputados();
   } else {
-    alert('✅ Todos los asuntos han sido votados. Puedes ver los resultados generales.');
+    alert('Todos los asuntos han sido votados. Puedes ver los resultados generales.');
     showSection('resultados');
   }
 }
-// —————————————————————————
-// Inicio: mostrar carga de "Orden del Día"
-// —————————————————————————
+
 function iniciarApp() {
   showSection('uploadOrden');
 }
 
-// —————————————————————————
-// Guardar sesión manual (fallback)
-// —————————————————————————
+
 async function guardarSesion() {
   const name = document.getElementById('nombreSesion').value.trim();
   if (!name) return alert('Escribe un nombre de sesión.');
@@ -319,9 +293,7 @@ async function guardarSesion() {
   showSection('asunto');
 }
 
-// —————————————————————————
-// Guardar asunto
-// —————————————————————————
+
 async function guardarAsunto() {
   const name = document.getElementById('listaAsuntos').value;
   const sid  = sessionStorage.getItem(K_SID);
@@ -339,18 +311,16 @@ async function guardarAsunto() {
   cargarDiputados();
 }
 
-// —————————————————————————
-// Cargar diputados
-// —————————————————————————
+
 async function cargarDiputados() {
-  // 1) Descarga una sola vez y reutiliza
+
   if (!DIPUTADOS_CACHE) {
     const res = await fetch(`${backend}/api/diputados`);
     DIPUTADOS_CACHE = await res.json();
   }
   let list = [...DIPUTADOS_CACHE];
 
-  // 2) Orden (igual que antes)
+ 
   if (ordenPreferido.length) {
     const pos = new Map(ordenPreferido.map((n, i) => [norm(n), i]));
     list.sort((a, b) => (pos.get(norm(a.nombre)) ?? 9999) - (pos.get(norm(b.nombre)) ?? 9999));
@@ -358,11 +328,11 @@ async function cargarDiputados() {
     list.sort((a, b) => norm(a.nombre).localeCompare(norm(b.nombre)));
   }
 
-  // 3) Placeholder “cargando…”
+
   const cont = document.getElementById('diputados-container');
   cont.innerHTML = '<p style="padding:1rem">Cargando diputados…</p>';
 
-  // 4) Render por lotes para no bloquear
+
   cont.innerHTML = '';
   const batchSize = 12;
   for (let i = 0; i < list.length; i += batchSize) {
@@ -396,17 +366,11 @@ async function cargarDiputados() {
     });
 
     cont.appendChild(frag);
-    // cede el hilo para que el navegador pinte
-    // y empiece a cargar imágenes del primer bloque
-    // antes de seguir con el siguiente
-    // (mejora muchísimo la sensación de velocidad)
-    // eslint-disable-next-line no-await-in-loop
+
     await new Promise(r => requestAnimationFrame(r));
   }
 }
-// —————————————————————————
-// Registrar voto
-// —————————————————————————
+
 async function votar(did, voto) {
   const sid = sessionStorage.getItem(K_SID);
   const aid = sessionStorage.getItem(K_AID);
@@ -424,7 +388,7 @@ async function votar(did, voto) {
       throw new Error(errorText);
     }
 
-    // 🟢 Mostrar que ya votó
+   
     const card = document.getElementById(`dip-${did}`);
     const botones = card.querySelectorAll('button');
     botones.forEach(btn => {
@@ -433,31 +397,28 @@ async function votar(did, voto) {
       btn.style.cursor = 'not-allowed';
     });
 
-    // ✅ Limpia y vuelve a enfocar el buscador para la siguiente búsqueda rápida
     const buscador = document.getElementById('buscadorDiputado');
     if (buscador) {
-      buscador.value = '';      // limpia el texto
-      filtrarDiputados();       // muestra de nuevo toda la lista
+      buscador.value = '';   
+      filtrarDiputados();       
       setTimeout(() => {
         buscador.focus({ preventScroll: true });
         try { buscador.setSelectionRange(0, 0); } catch {}
       }, 120);
     }
-        // 👆 Sube al inicio de la sección de diputados (ayuda en pantallas pequeñas)
+  
     const secDip = document.getElementById('diputados');
     if (secDip) {
       secDip.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
   } catch (err) {
-    console.error("❌ Error al votar:", err.message);
+    console.error("Error al votar:", err.message);
     alert("Error al votar: " + err.message);
   }
 } 
 
-// —————————————————————————
-// Cargar Resultados + Gráfica
-// —————————————————————————
+
 async function cargarResultados() {
   const sid   = sessionStorage.getItem(K_SID);
   const aid   = sessionStorage.getItem(K_AID);
@@ -467,7 +428,7 @@ async function cargarResultados() {
   const roman = toRoman(index + 1); // 🧠 Este es el número real del asunto actual
 
   if (!sid || !aid) {
-    console.warn("❌ No hay sesión o asunto activo.");
+    console.warn(" No hay sesión o asunto activo.");
     return;
   }
   
@@ -478,7 +439,7 @@ async function cargarResultados() {
     data = await res.json();
     if (!Array.isArray(data)) throw new Error("No es un array");
   } catch (err) {
-    console.error("❌ Error al cargar resultados:", err);
+    console.error("Error al cargar resultados:", err);
     return;
   }
   
@@ -509,25 +470,20 @@ async function cargarResultados() {
     options: { scales: { y: { beginAtZero: true } } }
   });
 
-// 👉 Mostrar botón "Siguiente Asunto" solo si hay más
-const btn = document.getElementById('botonSiguienteAsunto');
-btn.classList.add('hidden'); // Ocultamos primero por si acaso
 
-const btnFin = document.getElementById('botonTerminarSesion'); // 🔥 NUEVO
-btnFin.classList.add('hidden'); // Ocultamos siempre primero
+const btn = document.getElementById('botonSiguienteAsunto');
+btn.classList.add('hidden'); 
+
+const btnFin = document.getElementById('botonTerminarSesion'); 
+btnFin.classList.add('hidden'); 
 
 const total = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]').length;
 if (index + 1 < total) {
   btn.classList.remove('hidden');
 } else {
-  btnFin.classList.remove('hidden'); // 👈 Mostrar botón para terminar si ya no hay más asuntos
+  btnFin.classList.remove('hidden'); 
 }
 }
-
-
-// —————————————————————————
-// Exportar Asunto TXT/PDF/XLS
-// —————————————————————————
 
 
 async function mostrarResumenSesion() {
@@ -643,23 +599,23 @@ async function exportSesionPDF() {
   const nombreArchivo = document.getElementById('previewSesion')?.innerText?.replace('Sesión: ', '') || 'Sesión';
   const sid = sessionStorage.getItem(K_SID);
 
-  // Texto seguro para jsPDF: compone acentos (NFC) y colapsa espacios
+
 function pdfSafe(s) {
   return (s || '')
-    .normalize('NFC')           // <- clave: convierte "o"+"◌́" en "ó"
-    .replace(/\u200B/g, '')     // quita zero‑width si viniera
-    .replace(/\s+/g, ' ')       // colapsa espacios
+    .normalize('NFC')         
+    .replace(/\u200B/g, '')    
+    .replace(/\s+/g, ' ')      
     .trim();
 }
 
-  // --- Encabezado ---
+
   doc.setFont('helvetica', 'bold').setFontSize(18)
      .text('Informe Completo de Sesión', pw / 2, 40, { align: 'center' });
 
   doc.setFont('helvetica', 'bold').setFontSize(12);
   doc.text('Sesión:', 40, 70);
 
-  // 👉 Limpia mayúsculas y aplica Title Case en español
+
   const humanizar = (s) => {
     const stop = new Set(['de','del','la','las','el','los','y','o','u','a','en','por','para','con','sin','al']);
     return s
@@ -676,7 +632,6 @@ function pdfSafe(s) {
   let sesionBonita = humanizar(pdfSafe(sesionBruta));
 
 
-  // 👉 Envuelve y reduce tamaño si ocupa más de 2 líneas
   const maxW = pw - 120; 
   let fontSize = 12;
   doc.setFont('helvetica','normal').setFontSize(fontSize);
@@ -705,7 +660,6 @@ function pdfSafe(s) {
     return c;
   };
 
-  // 3) Procesar asuntos en lotes
   const MAX = 6;
   const lotes = [];
   for (let i = 0; i < asuntos.length; i += MAX) lotes.push(asuntos.slice(i, i + MAX));
@@ -728,7 +682,7 @@ function pdfSafe(s) {
 
       if (y > ph - 250) { doc.addPage(); y = 60; }
 
-      // 👉 Ajuste de texto largo en Asunto
+
       doc.setFont('helvetica', 'bold').setFontSize(12).text(`Asunto ${rom}:`, 40, y);
       let asuntoFont = 11;
       doc.setFont('helvetica', 'normal').setFontSize(asuntoFont);
@@ -790,9 +744,6 @@ function exportSesionXLS() {
   XLSX.writeFile(wb, 'resumen_sesion.xlsx');
 }
 
-// —————————————————————————
-// Terminar sesión
-// —————————————————————————
 function terminarSesion() {
   sessionStorage.clear();
   location.reload();
@@ -812,12 +763,12 @@ function exportAsuntoTXT() {
       a.click();
     });
 }
-// Texto seguro para jsPDF: compone acentos (NFC) y colapsa espacios
+
 function pdfSafe(s) {
   return (s || '')
-    .normalize('NFC')           // <- clave: convierte "o"+"◌́" en "ó"
-    .replace(/\u200B/g, '')     // quita zero‑width si viniera
-    .replace(/\s+/g, ' ')       // colapsa espacios
+    .normalize('NFC')           
+    .replace(/\u200B/g, '')     
+    .replace(/\s+/g, ' ')       
     .trim();
 }
 
@@ -833,14 +784,13 @@ async function exportAsuntoPDF() {
 
   doc.setFontSize(12);
 
-  // 🟡 SESIÓN
+
   doc.setFont('helvetica', 'bold');
   doc.text('Sesión: ', 40, 70);
   doc.setFont('helvetica', 'normal');
   const sesionText = document.getElementById('resumenSesion').querySelector('h3')?.innerText || '';
   const sesionValue = pdfSafe(sesionText.replace(/^Sesión:\s*/i, '').trim());
 
-  // 👉 Ajustar a máximo 2 líneas y reducir tamaño si es necesario
   let fontSize = 12;
   let sesionLines = doc.splitTextToSize(sesionValue, pw - 120);
   while (sesionLines.length > 2 && fontSize > 8) {
@@ -850,7 +800,7 @@ async function exportAsuntoPDF() {
   }
   doc.text(sesionLines, 100, 70);
 
-  // 🟡 ASUNTO
+  
   doc.setFont('helvetica', 'bold');
   let y = 90 + sesionLines.length * 18;
   doc.text('Asunto: ', 40, y);
@@ -858,7 +808,7 @@ async function exportAsuntoPDF() {
   const asuntoText = document.getElementById('resumenSesion').querySelectorAll('h3')[1]?.innerText || '';
   const asuntoValue = pdfSafe(asuntoText.replace(/^Asunto\s+[IVXLCDM]+:\s*/i, '').trim());
 
-  // 👉 Ajustar a máximo 4 líneas y reducir tamaño si es necesario
+
   fontSize = 12;
   let asuntoLines = doc.splitTextToSize(asuntoValue, pw - 120);
   while (asuntoLines.length > 4 && fontSize > 8) {
@@ -869,7 +819,7 @@ async function exportAsuntoPDF() {
   doc.text(asuntoLines, 100, y);
   y += asuntoLines.length * 18;
 
-  // 🗳️ Tabla de votos
+  
   const sid = sessionStorage.getItem(K_SID);
   const aid = sessionStorage.getItem(K_AID);
   const res = await fetch(`${backend}/api/votosDetalle?sesion_id=${sid}&asunto_id=${aid}`);
@@ -897,9 +847,9 @@ async function exportAsuntoPDF() {
       0: { cellWidth: 300, halign: 'left' },
       1: { cellWidth: 150, halign: 'center' }
     }
-  });
+  })
 
-  // 📊 Gráfica
+
   let finalY = doc.lastAutoTable.finalY + 20;
   const canvas = document.getElementById('chartResumen');
   const scale = 2;
@@ -911,7 +861,7 @@ async function exportAsuntoPDF() {
   ctx.scale(scale, scale);
   ctx.drawImage(canvas, 0, 0);
 
-  // 🟨 Números encima de cada barra
+  
   ctx.font = 'bold 16px sans-serif';
   ctx.fillStyle = 'black';
 
@@ -966,11 +916,11 @@ async function marcarAusentes() {
   const sid = sessionStorage.getItem(K_SID);
   const aid = sessionStorage.getItem(K_AID);
   if (!sid || !aid) {
-    console.warn("⚠️ No hay sesión o asunto para marcar ausentes.");
+    console.warn(" No hay sesión o asunto para marcar ausentes.");
     return;
   }
 
-  // 🔹 Una sola petición al backend (bulk)
+  
   try {
     await fetch(`${backend}/api/marcarAusentes`, {
       method: 'POST',
@@ -978,7 +928,7 @@ async function marcarAusentes() {
       body: JSON.stringify({ sesion_id: sid, asunto_id: aid })
     });
   } catch (err) {
-    console.error('❌ marcarAusentes bulk:', err);
+    console.error(' marcarAusentes bulk:', err);
   }
 }
 function filtrarDiputados() {
@@ -986,12 +936,10 @@ function filtrarDiputados() {
   const cards = document.querySelectorAll(".diputado-card");
 
   cards.forEach(card => {
-    // usa data-nombre si existe; si no, cae a textContent
     const base = card.dataset?.nombre || card.textContent;
     const match = norm(base).includes(q);
 
     if (match) {
-      // ¡no forces "block"! deja que el CSS decida (grid/flex)
       card.style.removeProperty('display');
     } else {
       card.style.display = 'none';
@@ -1011,7 +959,6 @@ window.addEventListener("DOMContentLoaded", () => {
       document.querySelector(".main").classList.add("hidden");
     }
 
-    // ✅ listener del login (sin anidar otro DOMContentLoaded)
     const loginForm = document.getElementById("loginForm");
     if (loginForm) {
       loginForm.addEventListener("submit", (e) => {
@@ -1020,7 +967,6 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // ✅ engancha atajos del buscador (si ya existe)
     hookSearchShortcuts();
   }, 50);
 });
@@ -1045,7 +991,7 @@ async function mostrarSesionesPasadas() {
 
   showSection('vistaEdicion');
 }
-// 1️⃣ Ajusta showSection
+
 function showSection(id) {
   ['uploadOrden','sesion','asunto','diputados','resultados','historial','sesionesPasadas','vistaEdicion']
     .forEach(s => {
@@ -1061,7 +1007,7 @@ function showSection(id) {
 }
 
 
-// 2️⃣ Carga lista de sesiones en "Sesiones Pasadas"
+
 async function cargarSesionesPasadas() {
   const ul = document.getElementById('listaSesionesPasadas');
   ul.innerHTML = '<li>Cargando sesiones…</li>';
@@ -1083,13 +1029,13 @@ async function cargarSesionesPasadas() {
   }
 }
 
-// 3️⃣ Cuando el user hace click en “Ver y editar”
+
 async function verDetallesSesion(idSesion, nombreSesion) {
-  // setea el título
+
   const cont = document.getElementById('votosPrevios');
   cont.innerHTML = `<h3>${nombreSesion}</h3>`;
   try {
-    // traemos sus asuntos
+  
     const rAs = await fetch(`${backend}/api/asuntos?sesion_id=${idSesion}`);
     const asuntos = await rAs.json();
     for (let a of asuntos) {
@@ -1123,7 +1069,7 @@ function hookSearchShortcuts() {
   const buscador = document.getElementById('buscadorDiputado');
   if (!buscador) return;
 
-  buscador.oninput  = filtrarDiputadosDebounced; // usa el debounce que ya creaste
+  buscador.oninput  = filtrarDiputadosDebounced; 
   buscador.onsearch = filtrarDiputados;
   buscador.onkeydown = (e) => {
     if (e.key === 'Enter') {
@@ -1135,7 +1081,7 @@ function hookSearchShortcuts() {
   };
 }
 
-// 4️⃣ Función PUT para actualizar voto
+
 async function editarVoto(votoId, nuevoVoto) {
   const res = await fetch(`${backend}/api/voto/${votoId}`, {
     method: 'PUT',

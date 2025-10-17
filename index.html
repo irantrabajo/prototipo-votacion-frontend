@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Prototipo de Votación</title>
+  <title>Prototipo de Votación.</title>
 
   <!-- Tu CSS -->
   <link rel="stylesheet" href="./styles.css"/>
@@ -16,13 +16,12 @@
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
-  <!-- Tu lógica JS -->
+
   <script src="./app.v3.js" defer></script>
 </head>
 <body>
   <div id="particles-js"></div>
 
-  <!-- 🔐 LOGIN PAGE -->
   <div class="login-page">
     <section id="login">
       <div class="login-container">
@@ -37,7 +36,7 @@
           <label for="passwordLogin">Contraseña</label>
           <input type="password" id="passwordLogin" required />
           <button type="submit">Ingresar</button>
-          <p id="loginError" class="hidden error">⚠️ Usuario o contraseña incorrectos.</p>
+          <p id="loginError" class="hidden error"> Usuario o contraseña incorrectos.</p>
         </form>
         <p class="olvido">
           ¿Olvidaste tu contraseña?
@@ -47,7 +46,7 @@
     </section>
   </div>
 
-  <!-- 📦 MAIN APP (se muestra después de login) -->
+
   <div class="sidebar hidden">
     <h2>🗳️ Votación</h2>
     <a onclick="showSection('uploadOrden')">Orden del Día</a>
@@ -62,7 +61,7 @@
       <span>Sistema de Votación Parlamentaria</span>
     </h1>
 
-    <!-- 0) Carga Orden del Día -->
+  
     <section id="uploadOrden" class="hidden">
       <h2>📄 Carga la Orden del Día</h2>
       <input type="file" id="fileOrden" accept="application/pdf" />
@@ -72,18 +71,18 @@
         <p id="previewNombreSesionOriginal" style="color:#555;"></p>
         <ul id="previewAsuntos"></ul>
         <div class="botones">
-          <button onclick="confirmarOrden()">✅ Confirmar e Iniciar Votación</button>
+          <button onclick="confirmarOrden()">Confirmar e Iniciar Votación</button>
         </div>
       </div>
     </section>
-    <!-- 1) Bienvenida -->
+    
     <section id="bienvenida" class="hidden">
       <h2>🗳️ Bienvenido al Sistema de Votación</h2>
       <p>Inicia una sesión para comenzar.</p>
       <button onclick="iniciarApp()">Comenzar</button>
     </section>
 
-    <!-- 2) Sesión -->
+    
     <section id="sesion" class="hidden">
       <div id="sesionActiva" class="hidden">
         <p>Sesión activa: <strong id="nombreSesionActivo"></strong></p>
@@ -95,14 +94,14 @@
       </div>
     </section>
 
-    <!-- 3) Asunto -->
+  
     <section id="asunto" class="hidden">
       <h2>📝 Selecciona un Asunto</h2>
       <select id="listaAsuntos"></select>
       <button onclick="guardarAsunto()">Iniciar Votación</button>
     </section>
 
-    <!-- 4) Diputados -->
+    
     <section id="diputados" class="hidden">
       <h2>Vota por cada diputado:</h2>
       <input
@@ -118,7 +117,7 @@
       <div id="diputados-container"></div>
     </section>
 
-    <!-- 5) Resultados por Asunto -->
+    
     <section id="resultados" class="hidden">
       <h2>Resumen de Resultados</h2>
       <div id="resumenSesion"></div>
@@ -141,15 +140,15 @@
       <pre id="resumenSesionCompleto" class="hidden"></pre>
     </section>
 
-    <!-- 7) Sesiones pasadas -->
+    
     <section id="sesionesPasadas" class="hidden">
-      <h2>🗂️ Sesiones Pasadas</h2>
+      <h2>Sesiones Pasadas</h2>
       <ul id="listaSesionesPasadas"></ul>
     </section>
 
-    <!-- 6) Terminar Sesión -->
+    
     <div id="botonTerminarSesion" class="hidden">
-      <button onclick="terminarSesion()">🔁 Terminar Sesión</button>
+      <button onclick="terminarSesion()">Terminar Sesión</button>
     </div>
   </div>
 </body>
