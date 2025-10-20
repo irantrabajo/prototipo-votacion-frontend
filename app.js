@@ -542,6 +542,27 @@ function pintarComisiones(lista, precheck = []){
   });
 }
 
+// Filtra comisiones por texto, preservando checks actuales y preselecciones
+function filtrarComisionesUI(q, sourceList, preMarcadas = []) {
+  const tokens = norm(q).split(/\s+/).filter(Boolean); // acento-insensible y por palabras
+  // Mantén lo ya seleccionado en pantalla
+  const seleccionadasAhora = new Set(
+    Array.from(document.querySelectorAll('#com-lista input[type=checkbox]:checked'))
+      .map(x => +x.value)
+  );
+  const keep = new Set(preMarcadas.map(Number));
+  const precheck = Array.from(new Set([...seleccionadasAhora, ...keep])); // union
+
+  let filtered = sourceList;
+  if (tokens.length) {
+    filtered = sourceList.filter(c => {
+      const name = norm(c.nombre);
+      return tokens.every(tok => name.includes(tok));
+    });
+  }
+  pintarComisiones(filtered, precheck);
+}
+
 function renderizarPreviaAsuntos(){
   // Cabecera
   const p = document.getElementById('previewSesion');
@@ -588,14 +609,23 @@ async function mostrarVistaIniciativa(asunto, sesionId){
   pintarComisiones(coms, preMarcadas);
   if (ta) ta.value = opinion;
 
-  // Mostrar vista
+
+if (busc) {
+  const doFilter = () => filtrarComisionesUI(busc.value, coms, preMarcadas);
+  const debouncedFilter = debounce(doFilter, 80); // ya tienes debounce definido
+
+  busc.addEventListener('input', debouncedFilter); 
+  busc.addEventListener('search', doFilter);      
+}
+
+
+  
   document.getElementById('vista-iniciativa').classList.remove('hidden');
 
-  // Oculta “Guardar” si existe
+  
   const btnGuardar = document.getElementById('ini-guardar');
   if (btnGuardar) { btnGuardar.classList.add('hidden'); btnGuardar.onclick = null; }
 
-  // Siguiente asunto: guarda y limpia UI antes de avanzar
   const btn = document.getElementById('ini-siguiente');
   btn.onclick = async () => {
     btn.disabled = true;
