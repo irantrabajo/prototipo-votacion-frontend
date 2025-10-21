@@ -225,6 +225,35 @@ async function cargarSesionesSubidas() {
   }
 }
 
+function pintarListaSesiones(sesiones) {
+  const tb = document.getElementById('tbodyListaSesiones');
+  if (!tb) return;
+
+  if (!Array.isArray(sesiones) || !sesiones.length) {
+    tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sin sesiones</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = sesiones.map(s => {
+    const nombreVis = s.original_name || s.nombre || '—';
+    const fechaVis  = _formatoFecha(s.fecha || s.created_at || s.f_creacion || s.fecha_creacion);
+    const usr       = s.creado_por ?? s.usuario ?? '—';
+    return `
+      <tr>
+        <td class="siglas">${usr}</td>
+        <td class="nombre-sesion">${nombreVis}</td>
+        <td class="fecha">${fechaVis}</td>
+        <td class="acciones">
+          <button class="btn-link"
+                  onclick="procesarSesion(${s.id}, '${encodeURIComponent(nombreVis)}')">
+            Procesar Orden del Día
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 function pintarComisiones(lista, precheck = []) {
   const cont = document.getElementById('com-lista');
   if (!cont) return;
@@ -534,32 +563,6 @@ async function getComisiones(){
   const r = await fetch(`${API}/comisiones`);
   _COMISIONES_CACHE = await r.json();
   return _COMISIONES_CACHE;
-}
-function pintarComisiones(lista, precheck = []) {
-  const cont = document.getElementById('com-lista');
-  if (!cont) return;
-  cont.innerHTML = '';
-
-  if (!Array.isArray(lista) || !lista.length) {
-    cont.innerHTML = `<div style="padding:.5rem;color:#777">No hay comisiones que coincidan.</div>`;
-    return;
-  }
-
-  lista.forEach(c => {
-    const id = `com-${c.id}`;
-    const isChecked = precheck.some(v => String(v) === String(c.id)); // 👈 clave
-
-    const row = document.createElement('label');
-    row.style.display = 'flex';
-    row.style.gap = '8px';
-    row.style.alignItems = 'center';
-    row.style.padding = '4px 8px';
-    row.innerHTML = `
-      <input type="checkbox" value="${c.id}" id="${id}" ${isChecked ? 'checked' : ''}/>
-      <span>${c.nombre}</span>
-    `;
-    cont.appendChild(row);
-  });
 }
 
 function filtrarComisionesUI(q, sourceList, preMarcadas = []) {
