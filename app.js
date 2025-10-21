@@ -225,30 +225,32 @@ async function cargarSesionesSubidas() {
   }
 }
 
-function pintarListaSesiones(sesiones) {
-  const tb = document.getElementById('tbodyListaSesiones');
-  if (!tb) return;
+function pintarComisiones(lista, precheck = []) {
+  const cont = document.getElementById('com-lista');
+  if (!cont) return;
+  cont.innerHTML = '';
 
-  if (!Array.isArray(sesiones) || !sesiones.length) {
-    tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sin sesiones</td></tr>`;
+  if (!Array.isArray(lista) || !lista.length) {
+    cont.innerHTML = `<div style="padding:.5rem;color:#777">No hay comisiones que coincidan.</div>`;
     return;
   }
 
-  tb.innerHTML = sesiones.map(s => {
-    const nombreVis = s.original_name || s.nombre || '—'; // 👈 preferir nombre real
-    return `
-      <tr>
-        <td class="siglas">${s.creado_por ?? '—'}</td>
-        <td class="nombre-sesion">${nombreVis}</td>
-        <td class="fecha">${_formatoFecha(s.fecha || s.created_at || s.f_creacion || s.fecha_creacion)}</td>
-        <td class="acciones">
-          <button class="btn-link" onclick="procesarSesion(${s.id}, '${encodeURIComponent(nombreVis)}')">
-            Procesar Orden del Día
-          </button>
-        </td>
-      </tr>
+  lista.forEach(c => {
+    const id = `com-${c.id}`;
+    const isChecked = precheck.some(v => String(v) === String(c.id));
+    const nombre = comName(c);
+
+    const row = document.createElement('label');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+    row.style.padding = '4px 8px';
+    row.innerHTML = `
+      <input type="checkbox" value="${c.id}" id="${id}" ${isChecked ? 'checked' : ''}/>
+      <span>${nombre}</span>
     `;
-  }).join('');
+    cont.appendChild(row);
+  });
 }
 
 function filtrarListaSesiones() {
@@ -313,9 +315,7 @@ function toRoman(num){
   for (const [v,s] of map) while (num >= v){ out += s; num -= v; }
   return out;
 }
- // ===== Helpers para clasificar y extraer metadatos =====
-// Reemplaza tu clasificarTipoAsunto actual por esta versión
-// ===== Helpers para clasificar y extraer metadatos =====
+
 function clasificarTipoAsunto(texto) {
   const s = String(texto || '').toLowerCase();
 
@@ -333,6 +333,18 @@ function clasificarTipoAsunto(texto) {
 
   // Fallback: cualquier cosa que no sea clara → NOTA
   return 'NOTA';
+}
+
+function comName(c) {
+  return (
+    c?.nombre ??
+    c?.nombre_comision ??
+    c?.denominacion ??
+    c?.descripcion ??
+    c?.titulo ??
+    c?.texto ??
+    ''
+  ).toString();
 }
 
 async function _guardarNotaSilenciosa(asuntoId, texto) {
@@ -523,40 +535,47 @@ async function getComisiones(){
   _COMISIONES_CACHE = await r.json();
   return _COMISIONES_CACHE;
 }
-function pintarComisiones(lista, precheck = []){
+function pintarComisiones(lista, precheck = []) {
   const cont = document.getElementById('com-lista');
   if (!cont) return;
   cont.innerHTML = '';
+
+  if (!Array.isArray(lista) || !lista.length) {
+    cont.innerHTML = `<div style="padding:.5rem;color:#777">No hay comisiones que coincidan.</div>`;
+    return;
+  }
+
   lista.forEach(c => {
     const id = `com-${c.id}`;
+    const isChecked = precheck.some(v => String(v) === String(c.id)); // 👈 clave
+
     const row = document.createElement('label');
     row.style.display = 'flex';
     row.style.gap = '8px';
     row.style.alignItems = 'center';
     row.style.padding = '4px 8px';
     row.innerHTML = `
-      <input type="checkbox" value="${c.id}" id="${id}" ${precheck.includes(c.id)?'checked':''}/>
+      <input type="checkbox" value="${c.id}" id="${id}" ${isChecked ? 'checked' : ''}/>
       <span>${c.nombre}</span>
     `;
     cont.appendChild(row);
   });
 }
 
-// Filtra comisiones por texto, preservando checks actuales y preselecciones
 function filtrarComisionesUI(q, sourceList, preMarcadas = []) {
-  const tokens = norm(q).split(/\s+/).filter(Boolean); // acento-insensible y por palabras
-  // Mantén lo ya seleccionado en pantalla
+  const tokens = norm(q).split(/\s+/).filter(Boolean);
+
   const seleccionadasAhora = new Set(
     Array.from(document.querySelectorAll('#com-lista input[type=checkbox]:checked'))
-      .map(x => +x.value)
+      .map(x => String(x.value))
   );
-  const keep = new Set(preMarcadas.map(Number));
-  const precheck = Array.from(new Set([...seleccionadasAhora, ...keep])); // union
+  const keep = new Set(preMarcadas.map(v => String(v)));
+  const precheck = Array.from(new Set([...seleccionadasAhora, ...keep]));
 
-  let filtered = sourceList;
+  let filtered = Array.isArray(sourceList) ? sourceList : [];
   if (tokens.length) {
-    filtered = sourceList.filter(c => {
-      const name = norm(c.nombre);
+    filtered = filtered.filter(c => {
+      const name = norm(comName(c));
       return tokens.every(tok => name.includes(tok));
     });
   }
@@ -564,11 +583,11 @@ function filtrarComisionesUI(q, sourceList, preMarcadas = []) {
 }
 
 function renderizarPreviaAsuntos(){
-  // Cabecera
+  
   const p = document.getElementById('previewSesion');
   if (p) p.textContent = `Sesión: ${SESION_NOMBRE || '(sin nombre)'}`;
 
-  // Lista editable
+  
   const ul = document.getElementById('previewAsuntos');
   if (!ul) return;
   ul.innerHTML = ASUNTOS_EDIT.map((a,i) => `
@@ -586,22 +605,19 @@ function eliminarAsuntoPrevio(idx){
 }
 
 async function mostrarVistaIniciativa(asunto, sesionId){
-  // Título
   document.getElementById('ini-titulo').textContent =
     `(${aRomano(asunto.ordinal || 1)}) ${asunto.asunto || asunto.titulo || ''}`;
 
-  // Limpia SIEMPRE al entrar
   const ta   = document.getElementById('ini-opinion');
-  const busc = document.getElementById('com-buscar');
+  const busc = document.getElementById('com-buscar');   
   if (ta)   ta.value = '';
   if (busc) busc.value = '';
 
-  // Carga comisiones y (si existe) la remisión ya guardada
   const coms = await getComisiones();
   let preMarcadas = [], opinion = '';
   if (asunto.id) {
     try {
-      const { comisiones, opinion: op } = await obtenerRemision(asunto.id); // GET (si tu server no lo trae, ver nota abajo)
+      const { comisiones, opinion: op } = await obtenerRemision(asunto.id);
       preMarcadas = (comisiones || []).map(c => c.id);
       opinion = op || '';
     } catch {}
@@ -609,20 +625,19 @@ async function mostrarVistaIniciativa(asunto, sesionId){
   pintarComisiones(coms, preMarcadas);
   if (ta) ta.value = opinion;
 
-
-if (busc) {
-  const doFilter = () => filtrarComisionesUI(busc.value, coms, preMarcadas);
-  const debouncedFilter = debounce(doFilter, 80); // ya tienes debounce definido
-
-  busc.addEventListener('input', debouncedFilter); 
-  busc.addEventListener('search', doFilter);      
-}
-
-
   
+  if (busc && !busc.dataset.hooked) {
+    const doFilter = () => filtrarComisionesUI(busc.value, coms, preMarcadas);
+    const debouncedFilter = debounce(doFilter, 80);
+    busc.addEventListener('input', debouncedFilter);
+    busc.addEventListener('search', doFilter);
+    busc.dataset.hooked = '1';
+  }
+  
+  filtrarComisionesUI(busc ? busc.value : '', coms, preMarcadas);
+
   document.getElementById('vista-iniciativa').classList.remove('hidden');
 
-  
   const btnGuardar = document.getElementById('ini-guardar');
   if (btnGuardar) { btnGuardar.classList.add('hidden'); btnGuardar.onclick = null; }
 
@@ -642,14 +657,12 @@ if (busc) {
     } catch (e) {
       console.warn('No se pudo guardar la remisión (continuo):', e);
     } finally {
-      // 🔹 Limpiar UI para el siguiente asunto
       if (ta) ta.value = '';
       document.querySelectorAll('#com-lista input[type=checkbox]').forEach(x => x.checked = false);
       if (busc) busc.value = '';
       btn.disabled = false;
     }
 
-    // Traer siguiente y abrir
     const desde = asunto.ordinal || 0;
     let next = null;
     try {
@@ -659,6 +672,7 @@ if (busc) {
     next ? abrirAsunto(next, sesionId) : mostrarVistaCierre();
   };
 }
+
 // —————————————————————————
 // Confirmar Orden: crear sesión + asuntos (bulk)
 // —————————————————————————
@@ -1978,7 +1992,7 @@ function mostrarVistaCierre(){
   if (el) el.textContent = SNAME() || 'Sesión';
   showSection('finSesion');
 }
-// en showSection → agrega 'finSesion' al arreglo:
+
 const secciones = ['uploadOrden','confirmarOrden','sesion','diputados','resultados','historial','sesionesPasadas','vistaEdicion','vista-iniciativa','vista-nota','finSesion'];
 
 
@@ -2016,3 +2030,4 @@ window.uploadOrden = subirOrden;
 window.renderizarPreviaAsuntos = renderizarPreviaAsuntos;
 window.eliminarAsuntoPrevio    = eliminarAsuntoPrevio;
 window.confirmarOrden          = confirmarOrden;
+window.filtrarComisionesUI = filtrarComisionesUI;
