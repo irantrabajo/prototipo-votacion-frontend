@@ -598,36 +598,52 @@ async function mostrarVistaIniciativa(asunto, sesionId){
   // Siguiente asunto: guarda y limpia UI antes de avanzar
   const btn = document.getElementById('ini-siguiente');
   btn.onclick = async () => {
-    btn.disabled = true;
-    try {
-      if (asunto.id) {
-        const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')].map(x => +x.value);
-        const opinionVal = ta?.value || '';
-        await fetch(`${API}/asuntos/${asunto.id}/remision`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ comisionesIds: ids, opinion: opinionVal })
-        });
-      }
-    } catch (e) {
-      console.warn('No se pudo guardar la remisión (continuo):', e);
-    } finally {
-      // 🔹 Limpiar UI para el siguiente asunto
-      if (ta) ta.value = '';
-      document.querySelectorAll('#com-lista input[type=checkbox]').forEach(x => x.checked = false);
-      if (busc) busc.value = '';
-      btn.disabled = false;
+  btn.disabled = true;
+  try {
+    if (asunto.id) {
+      const ids = [...document.querySelectorAll('#com-lista input[type=checkbox]:checked')].map(x => +x.value);
+      const opinionVal = ta?.value || '';
+     
+      await fetch(`${API}/asuntos/${asunto.id}/remision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comisionesIds: ids, opinion: opinionVal })
+      }).catch(()=>{});
     }
+  } finally {
+   
+    if (ta) ta.value = '';
+    document.querySelectorAll('#com-lista input[type=checkbox]').forEach(x => x.checked = false);
+    if (busc) busc.value = '';
+    btn.disabled = false;
+  }
 
-    // Traer siguiente y abrir
-    const desde = asunto.ordinal || 0;
-    let next = null;
-    try {
-      const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
-      if (r.ok) next = await r.json();
-    } catch {}
-    next ? abrirAsunto(next, sesionId) : mostrarVistaCierre();
-  };
+  
+  const desde = asunto.ordinal || 0;
+  let next = null;
+  try {
+    const r = await fetch(`${API}/sesiones/${sesionId}/asuntos/siguiente?desde=${desde}`);
+    if (r.ok) next = await r.json();
+  } catch {}
+
+  
+  if (!next) {
+    const arr = JSON.parse(sessionStorage.getItem('asuntos_array') || '[]');
+    const idx = Math.max(0, (asunto.ordinal || 1) - 1);
+    const raw = arr[idx + 1];
+    if (raw) {
+      next = {
+        id: raw.id ?? null,
+        sesion_id: sesionId ?? SID(),
+        ordinal: (asunto.ordinal || 1) + 1,
+        tipo: clasificarTipoAsunto(raw.asunto || raw.titulo || ''),
+        titulo: raw.asunto || raw.titulo || ''
+      };
+    }
+  }
+
+  next ? abrirAsunto(next, sesionId) : mostrarVistaCierre();
+};
 }
 // —————————————————————————
 // Confirmar Orden: crear sesión + asuntos (bulk)
