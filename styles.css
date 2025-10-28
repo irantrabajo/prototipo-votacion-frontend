@@ -598,3 +598,37 @@ html, body { font-family: var(--font-sans) !important; }
 /* 4) Búsqueda de comisión en guinda (borde) */
 #com-buscar { border-color: var(--guinda) !important; }
 
+
+/* === Alineación fina de tablas (sesión y sesiones pasadas) === */
+.tabla-sesiones{ table-layout: fixed; } /* respeta anchos por columna */
+
+/* Sesiones subidas (4 columnas) */
+#sesion .tabla-sesiones thead th:nth-child(1),
+#sesion .tabla-sesiones tbody td:nth-child(1){ width:160px; }
+#sesion .tabla-sesiones thead th:nth-child(3),
+#sesion .tabla-sesiones tbody td:nth-child(3){
+  width:190px; text-align:center !important;
+  white-space:nowrap; font-variant-numeric: tabular-nums;
+}
+#sesion .tabla-sesiones thead th:nth-child(4),
+#sesion .tabla-sesiones tbody td:nth-child(4){
+  width:180px; text-align:center !important;
+}
+
+/* Sesiones pasadas (6 columnas) */
+#sesionesPasadas .tabla-sesiones thead th:nth-child(1),
+#sesionesPasadas .tabla-sesiones tbody td:nth-child(1){ width:160px; }
+#sesionesPasadas .tabla-sesiones thead th:nth-child(3),
+#sesionesPasadas .tabla-sesiones tbody td:nth-child(3){
+  width:190px; text-align:center !important;
+  white-space:nowrap; font-variant-numeric: tabular-nums;
+}
+#sesionesPasadas .tabla-sesiones thead th:nth-child(4),
+#sesionesPasadas .tabla-sesiones tbody td:nth-child(4),
+#sesionesPasadas .tabla-sesiones thead th:nth-child(5),
+#sesionesPasadas .tabla-sesiones tbody td:nth-child(5),
+#sesionesPasadas .tabla-sesiones thead th:nth-child(6),
+#sesionesPasadas .tabla-sesiones tbody td:nth-child(6){
+  text-align:center !important;
+}
+

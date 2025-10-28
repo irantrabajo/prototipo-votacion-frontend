@@ -124,18 +124,22 @@
     
       <div class="tabla-wrapper">
         <table class="tabla-sesiones">
-          <thead>
-            <tr>
-              <th style="width:140px; text-align:left;">Usuario/ID</th>
-              <th style="text-align:left;">Sesión / Orden del día</th>
-              <th style="width:190px; text-align:left;">Fecha</th>
-              <th style="width:180px; text-align:left;">Acción</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyListaSesiones">
-            <tr><td colspan="4" style="text-align:center;">Cargando…</td></tr>
-          </tbody>
-        </table>
+  <colgroup>
+    <col style="width:160px">   <!-- Usuario/ID -->
+    <col>                       <!-- Sesión / Orden del día (flex) -->
+    <col style="width:190px">   <!-- Fecha -->
+    <col style="width:180px">   <!-- Acción -->
+  </colgroup>
+  <thead>
+    <tr>
+      <th style="text-align:left;">Usuario/ID</th>
+      <th style="text-align:left;">Sesión / Orden del día</th>
+      <th>Fecha</th>              <!-- sin text-align inline -->
+      <th>Acción</th>             <!-- sin text-align inline -->
+    </tr>
+  </thead>
+  <tbody id="tbodyListaSesiones">…</tbody>
+</table>
       </div>
     
       <!-- indicador de sesión activa (si lo quieres) -->
@@ -272,21 +276,26 @@
 
   <div class="tabla-wrapper">
     <table class="tabla-sesiones" style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th style="width:140px; text-align:left;">Usuario/ID</th>
-          <th style="text-align:left;">Sesión / Orden del día</th>
-          <th style="width:190px; text-align:left;">Fecha</th>
-          <th style="width:140px; text-align:left;">Descargar</th>
-          <th style="width:120px; text-align:left;">Editar</th>
-          <th style="width:120px; text-align:left;">Eliminar</th>
-        </tr>
-      </thead>
-      <!--  ESTE ID es el que usa mi app.js: cargarSesionesPasadas()  -->
-      <tbody id="tablaSesionesBody">
-        <tr><td colspan="6" style="text-align:center;">Cargando sesiones…</td></tr>
-      </tbody>
-    </table>
+  <colgroup>
+    <col style="width:160px">   <!-- Usuario/ID -->
+    <col>                       <!-- Sesión / Orden del día (flex) -->
+    <col style="width:190px">   <!-- Fecha -->
+    <col style="width:140px">   <!-- Descargar -->
+    <col style="width:120px">   <!-- Editar -->
+    <col style="width:120px">   <!-- Eliminar -->
+  </colgroup>
+  <thead>
+    <tr>
+      <th style="text-align:left;">Usuario/ID</th>
+      <th style="text-align:left;">Sesión / Orden del día</th>
+      <th>Fecha</th>
+      <th>Descargar</th>
+      <th>Editar</th>
+      <th>Eliminar</th>
+    </tr>
+  </thead>
+  <tbody id="tablaSesionesBody">…</tbody>
+</table>
   </div>
 
   <!-- “Por vistas”: panel con el detalle en la misma página (tu app.js lo llena con verDetallesSesion) -->
@@ -295,8 +304,6 @@
     <div id="votosPrevios">Selecciona una sesión para ver el detalle.</div>
   </div>
 </section>
-
-<link rel="stylesheet" href="./styles.css?v=20251002b"/>
 
 
     <!-- 8) Terminar Sesión -->
